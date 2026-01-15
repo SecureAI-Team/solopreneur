@@ -6,6 +6,8 @@ import { authRoutes } from './routes/auth';
 import { contentRoutes } from './routes/content';
 import { analyticsRoutes } from './routes/analytics';
 import { aiRoutes } from './routes/ai';
+import { uploadRoutes } from './routes/upload';
+import { platformRoutes } from './routes/platform';
 
 const app = new Hono();
 
@@ -29,6 +31,8 @@ app.route('/api/auth', authRoutes);
 app.route('/api/content', contentRoutes);
 app.route('/api/analytics', analyticsRoutes);
 app.route('/api/ai', aiRoutes);
+app.route('/api/upload', uploadRoutes);
+app.route('/api/platforms', platformRoutes);
 
 // 错误处理
 app.onError((err, c) => {

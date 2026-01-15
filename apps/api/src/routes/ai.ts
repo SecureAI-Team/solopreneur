@@ -7,6 +7,9 @@ import {
     generateInsights,
     type ChatMessage
 } from '@solomedia/ai';
+import { db } from '../db';
+import { aiConversations } from '@solomedia/database';
+import { eq } from 'drizzle-orm';
 
 export const aiRoutes = new Hono();
 
@@ -119,7 +122,7 @@ aiRoutes.post('/optimize-title', async (c) => {
 aiRoutes.post('/chat', async (c) => {
     try {
         const body = await c.req.json();
-        const { message, history = [] } = body;
+        const { message, history = [], userId } = body; // 需要从auth中间件获取userId
 
         if (!message) {
             return c.json({ success: false, error: '请输入消息' }, 400);
@@ -135,6 +138,20 @@ aiRoutes.post('/chat', async (c) => {
         }));
 
         const response = await assistantChat(messages, historyMessages);
+
+        // 临时用户ID占位符，生产环境应从Token获取
+        const currentUserId = userId || '00000000-0000-0000-0000-000000000000';
+
+        // 异步保存对话历史
+        try {
+            await db.insert(aiConversations).values({
+                userId: currentUserId,
+                messages: [...historyMessages, ...messages, { role: 'assistant', content: response }],
+            });
+        } catch (dbError) {
+            console.error('保存对话历史失败:', dbError);
+            // 不中断主流程
+        }
 
         return c.json({
             success: true,

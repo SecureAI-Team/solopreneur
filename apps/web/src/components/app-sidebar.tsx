@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Users,
   Zap,
+  FolderOpen,
 } from "lucide-react"
 
 import {
@@ -37,12 +38,17 @@ const mainNavItems = [
   {
     title: "总览",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/dashboard",
   },
   {
     title: "内容工作台",
     icon: FileText,
     href: "/content",
+  },
+  {
+    title: "素材库",
+    icon: FolderOpen,
+    href: "/media",
   },
   {
     title: "发布中心",

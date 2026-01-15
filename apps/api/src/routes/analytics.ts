@@ -1,93 +1,162 @@
 import { Hono } from 'hono';
+import { db } from '../db';
+import { analytics, publishRecords, contents } from '@solomedia/database';
+import { eq, sql, desc, and, gte } from 'drizzle-orm';
 
 export const analyticsRoutes = new Hono();
 
-// 模拟分析数据
-const mockAnalytics = {
-    overview: {
-        totalViews: 125800,
-        totalFollowers: 43400,
-        totalInteractions: 12600,
-        estimatedRevenue: 3280,
-        viewsChange: 15.2,
-        followersChange: 8.5,
-        interactionsChange: 23.1,
-        revenueChange: -2.3,
-    },
-    platformBreakdown: [
-        { platform: 'douyin', name: '抖音', views: 65000, percentage: 52, followers: 12500 },
-        { platform: 'xiaohongshu', name: '小红书', views: 32000, percentage: 25, followers: 8200 },
-        { platform: 'bilibili', name: 'B站', views: 18000, percentage: 14, followers: 5600 },
-        { platform: 'youtube', name: 'YouTube', views: 10000, percentage: 8, followers: 2100 },
-    ],
-    topContent: [
-        { id: '1', title: '冬季护肤必备单品推荐', platform: 'xiaohongshu', views: 45000, engagement: 12.5 },
-        { id: '2', title: '5分钟早餐合集第8期', platform: 'douyin', views: 28000, engagement: 8.3 },
-        { id: '3', title: '年度好物盘点TOP10', platform: 'bilibili', views: 22000, engagement: 6.8 },
-    ],
-    recentTrend: [
-        { date: '2026-01-09', views: 15600, interactions: 1200 },
-        { date: '2026-01-10', views: 18200, interactions: 1450 },
-        { date: '2026-01-11', views: 16800, interactions: 1320 },
-        { date: '2026-01-12', views: 21000, interactions: 1680 },
-        { date: '2026-01-13', views: 24500, interactions: 1950 },
-        { date: '2026-01-14', views: 19800, interactions: 1560 },
-        { date: '2026-01-15', views: 9900, interactions: 790 },
-    ],
-};
-
 // 获取概览数据
 analyticsRoutes.get('/overview', async (c) => {
-    return c.json({
-        success: true,
-        data: mockAnalytics.overview,
-    });
+    try {
+        // 聚合所有发布记录的统计数据
+        const [result] = await db
+            .select({
+                totalViews: sql<number>`sum(${analytics.views})`,
+                totalFollowers: sql<number>`sum(${analytics.followers})`, // 这里简化处理，实际可能需要去重或取最新
+                totalInteractions: sql<number>`sum(${analytics.likes} + ${analytics.comments} + ${analytics.shares})`,
+            })
+            .from(analytics);
+
+        // 模拟环比增长数据 (实际需要对比上个周期)
+        return c.json({
+            success: true,
+            data: {
+                totalViews: Number(result?.totalViews || 0),
+                totalFollowers: Number(result?.totalFollowers || 0),
+                totalInteractions: Number(result?.totalInteractions || 0),
+                estimatedRevenue: 0, //暂无收入数据
+                viewsChange: 15.2, // 模拟
+                followersChange: 8.5,
+                interactionsChange: 23.1,
+                revenueChange: 0,
+            },
+        });
+    } catch (error: any) {
+        return c.json({ success: false, error: error.message }, 500);
+    }
 });
 
 // 获取平台分布
 analyticsRoutes.get('/platforms', async (c) => {
-    return c.json({
-        success: true,
-        data: mockAnalytics.platformBreakdown,
-    });
+    try {
+        // 按平台分组统计
+        // 由于平台信息在platform_connections表，这里简化为直接按发布记录查询，实际需要join
+        // 暂时返回空或者模拟数据，直到关联查询完善
+        return c.json({
+            success: true,
+            data: [
+                { platform: 'douyin', name: '抖音', views: 0, percentage: 0, followers: 0 },
+                { platform: 'xiaohongshu', name: '小红书', views: 0, percentage: 0, followers: 0 },
+            ],
+            message: '平台数据统计需完善关联查询'
+        });
+    } catch (error: any) {
+        return c.json({ success: false, error: error.message }, 500);
+    }
 });
 
 // 获取热门内容
 analyticsRoutes.get('/top-content', async (c) => {
-    const limit = Number(c.req.query('limit')) || 10;
-    return c.json({
-        success: true,
-        data: mockAnalytics.topContent.slice(0, limit),
-    });
+    try {
+        const limit = Number(c.req.query('limit')) || 10;
+
+        const result = await db
+            .select({
+                id: contents.id,
+                title: contents.title,
+                views: analytics.views,
+                likes: analytics.likes,
+                comments: analytics.comments,
+                shares: analytics.shares,
+            })
+            .from(analytics)
+            .innerJoin(publishRecords, eq(analytics.publishRecordId, publishRecords.id))
+            .innerJoin(contents, eq(publishRecords.contentId, contents.id))
+            .orderBy(desc(analytics.views))
+            .limit(limit);
+
+        return c.json({
+            success: true,
+            data: result.map(item => ({
+                id: item.id,
+                title: item.title,
+                platform: 'all', // 简化
+                views: item.views,
+                engagement: ((item.likes! + item.comments! + item.shares!) / (item.views! || 1) * 100).toFixed(1),
+            })),
+        });
+    } catch (error: any) {
+        return c.json({ success: false, error: error.message }, 500);
+    }
 });
 
 // 获取趋势数据
 analyticsRoutes.get('/trend', async (c) => {
-    const days = Number(c.req.query('days')) || 7;
-    return c.json({
-        success: true,
-        data: mockAnalytics.recentTrend.slice(-days),
-    });
+    try {
+        const days = Number(c.req.query('days')) || 7;
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+
+        // 按日期分组统计
+        const result = await db
+            .select({
+                date: sql<string>`to_char(${analytics.recordedAt}, 'YYYY-MM-DD')`,
+                views: sql<number>`sum(${analytics.views})`,
+                interactions: sql<number>`sum(${analytics.likes} + ${analytics.comments} + ${analytics.shares})`,
+            })
+            .from(analytics)
+            .where(gte(analytics.recordedAt, startDate))
+            .groupBy(sql`to_char(${analytics.recordedAt}, 'YYYY-MM-DD')`)
+            .orderBy(sql`to_char(${analytics.recordedAt}, 'YYYY-MM-DD')`);
+
+        return c.json({
+            success: true,
+            data: result,
+        });
+    } catch (error: any) {
+        return c.json({ success: false, error: error.message }, 500);
+    }
 });
 
 // 获取单个内容的分析
 analyticsRoutes.get('/content/:id', async (c) => {
     const id = c.req.param('id');
+    try {
+        // 聚合该内容在所有平台的发布记录统计
+        // 先找到该内容的所有发布记录
+        const records = await db
+            .select({
+                id: publishRecords.id
+            })
+            .from(publishRecords)
+            .where(eq(publishRecords.contentId, id));
 
-    // 模拟内容分析数据
-    return c.json({
-        success: true,
-        data: {
-            contentId: id,
-            totalViews: 45000,
-            likes: 3200,
-            comments: 456,
-            shares: 128,
-            saves: 890,
-            avgWatchTime: 45, // 秒
-            completionRate: 68.5, // 百分比
-            audienceGender: { male: 35, female: 65 },
-            audienceAge: { '18-24': 45, '25-34': 35, '35-44': 15, '45+': 5 },
-        },
-    });
+        if (records.length === 0) {
+            return c.json({ success: true, data: { totalViews: 0, likes: 0, comments: 0, shares: 0 } });
+        }
+
+        const recordIds = records.map(r => r.id);
+
+        const [stats] = await db
+            .select({
+                totalViews: sql<number>`sum(${analytics.views})`,
+                likes: sql<number>`sum(${analytics.likes})`,
+                comments: sql<number>`sum(${analytics.comments})`,
+                shares: sql<number>`sum(${analytics.shares})`,
+            })
+            .from(analytics)
+            .where(sql`${analytics.publishRecordId} IN ${recordIds}`);
+
+        return c.json({
+            success: true,
+            data: {
+                contentId: id,
+                ...stats,
+                avgWatchTime: 0, // 需要更多字段支持
+                completionRate: 0,
+            },
+        });
+    } catch (error: any) {
+        return c.json({ success: false, error: error.message }, 500);
+    }
 });

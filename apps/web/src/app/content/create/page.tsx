@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { RichEditor } from '@/components/editor/rich-editor';
 import { PosterGenerator } from '@/components/editor/poster-generator';
@@ -11,11 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Wand2, Save, Send, ArrowLeft, Image,
-    Video, FileText, Sparkles, Check
+    Video, FileText, Sparkles, Check, Loader2
 } from 'lucide-react';
 import Link from 'next/link';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
-// 平台选项
+// 平台选项... (不变)
 const platforms = [
     { id: 'douyin', name: '抖音', icon: '🎵', color: 'bg-black' },
     { id: 'xiaohongshu', name: '小红书', icon: '📕', color: 'bg-red-500' },
@@ -24,14 +27,19 @@ const platforms = [
 ];
 
 export default function CreateContentPage() {
+    const router = useRouter();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['douyin']);
     const [contentType, setContentType] = useState<'video' | 'image' | 'article'>('video');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isPublishing, setIsPublishing] = useState(false);
+    const [contentId, setContentId] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('editor');
 
     const handlePlatformToggle = (platformId: string) => {
+        // ... (不变)
         setSelectedPlatforms(prev =>
             prev.includes(platformId)
                 ? prev.filter(id => id !== platformId)
@@ -40,13 +48,13 @@ export default function CreateContentPage() {
     };
 
     const handleAIGenerate = async () => {
+        // ... (不变)
         if (!title) {
-            alert('请先输入标题/选题');
+            toast.error('请先输入标题/选题');
             return;
         }
 
         setIsGenerating(true);
-
         // 模拟AI生成
         setTimeout(() => {
             setContent(`
@@ -66,12 +74,73 @@ export default function CreateContentPage() {
 <p><strong>关注我，获取更多优质内容～</strong></p>
       `.trim());
             setIsGenerating(false);
+            toast.success('AI生成完成');
         }, 1500);
     };
 
-    const handleSave = () => {
-        console.log('保存草稿:', { title, content, selectedPlatforms, contentType });
-        alert('草稿已保存！');
+    const handleSave = async (showToast = true) => {
+        if (!title) {
+            toast.error('请输入内容标题');
+            return null;
+        }
+
+        setIsSaving(true);
+        try {
+            const data = {
+                title,
+                body: content,
+                type: contentType,
+                platforms: selectedPlatforms,
+            };
+
+            let res;
+            if (contentId) {
+                res = await api.content.update(contentId, data);
+            } else {
+                res = await api.content.create(data);
+            }
+
+            if (res.success && res.data) {
+                setContentId(res.data.id);
+                if (showToast) toast.success('草稿已保存');
+                return res.data.id;
+            } else {
+                toast.error(res.error || '保存失败');
+                return null;
+            }
+        } catch (error) {
+            toast.error('保存出错');
+            return null;
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handlePublish = async () => {
+        if (selectedPlatforms.length === 0) {
+            toast.error('请至少选择一个发布平台');
+            return;
+        }
+
+        // 先保存
+        const savedId = await handleSave(false);
+        if (!savedId) return;
+
+        setIsPublishing(true);
+        try {
+            const res = await api.content.publish(savedId, selectedPlatforms as any);
+            if (res.success) {
+                toast.success('发布任务已提交');
+                // 可以在这里显示发布结果详情 (results)
+                setTimeout(() => router.push('/content'), 1000);
+            } else {
+                toast.error(res.error || '发布请求失败');
+            }
+        } catch (error) {
+            toast.error('发布出错');
+        } finally {
+            setIsPublishing(false);
+        }
     };
 
     return (
@@ -91,13 +160,17 @@ export default function CreateContentPage() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={handleSave}>
-                            <Save className="h-4 w-4 mr-2" />
-                            保存草稿
+                        <Button variant="outline" onClick={() => handleSave(true)} disabled={isSaving || isPublishing}>
+                            {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                            {isSaving ? '保存中...' : '保存草稿'}
                         </Button>
-                        <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700">
-                            <Send className="h-4 w-4 mr-2" />
-                            发布
+                        <Button
+                            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                            onClick={handlePublish}
+                            disabled={isSaving || isPublishing}
+                        >
+                            {isPublishing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                            {isPublishing ? '发布中...' : '发布'}
                         </Button>
                     </div>
                 </div>
@@ -217,8 +290,8 @@ export default function CreateContentPage() {
                                         <div
                                             key={platform.id}
                                             className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedPlatforms.includes(platform.id)
-                                                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-950'
-                                                    : 'hover:bg-muted'
+                                                ? 'border-violet-500 bg-violet-50 dark:bg-violet-950'
+                                                : 'hover:bg-muted'
                                                 }`}
                                             onClick={() => handlePlatformToggle(platform.id)}
                                         >
