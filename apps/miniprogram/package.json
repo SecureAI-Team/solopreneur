@@ -1,0 +1,12 @@
+{
+    "name": "@solomedia/miniprogram",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "echo 请使用微信开发者工具打开此目录",
+        "build": "echo 请使用微信开发者工具构建"
+    },
+    "devDependencies": {
+        "miniprogram-api-typings": "^3.12.3"
+    }
+}

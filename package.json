@@ -1,26 +1,18 @@
 {
-  "name": "solopreneur",
+  "name": "solomedia",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.1.2",
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "dev:web": "turbo dev --filter=@solomedia/web",
+    "dev:api": "turbo dev --filter=@solomedia/api",
+    "db:generate": "turbo db:generate --filter=@solomedia/database",
+    "db:push": "turbo db:push --filter=@solomedia/database"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.2",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "turbo": "^2.5.0"
+  },
+  "packageManager": "pnpm@9.15.0"
 }

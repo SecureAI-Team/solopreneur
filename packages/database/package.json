@@ -1,0 +1,33 @@
+{
+    "name": "@solomedia/database",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        },
+        "./schema": {
+            "import": "./dist/schema/index.js",
+            "types": "./dist/schema/index.d.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsup src/index.ts src/schema/index.ts --format esm --dts",
+        "db:generate": "drizzle-kit generate",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio"
+    },
+    "dependencies": {
+        "drizzle-orm": "^0.43.1",
+        "postgres": "^3.4.6"
+    },
+    "devDependencies": {
+        "drizzle-kit": "^0.31.1",
+        "tsup": "^8.5.0",
+        "typescript": "^5"
+    }
+}

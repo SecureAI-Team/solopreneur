@@ -1,0 +1,24 @@
+{
+    "name": "@solomedia/shared",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "scripts": {
+        "build": "tsup src/index.ts --format esm --dts"
+    },
+    "dependencies": {
+        "zod": "^3.24.5"
+    },
+    "devDependencies": {
+        "tsup": "^8.5.0",
+        "typescript": "^5"
+    }
+}
