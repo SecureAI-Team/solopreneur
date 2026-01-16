@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -37,14 +38,16 @@ export function DashboardLayout({
                                     <BreadcrumbLink href="/">首页</BreadcrumbLink>
                                 </BreadcrumbItem>
                                 {breadcrumbs.map((crumb, index) => (
-                                    <BreadcrumbItem key={index}>
+                                    <React.Fragment key={index}>
                                         <BreadcrumbSeparator />
-                                        {crumb.href ? (
-                                            <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
-                                        ) : (
-                                            <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                                        )}
-                                    </BreadcrumbItem>
+                                        <BreadcrumbItem>
+                                            {crumb.href ? (
+                                                <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
+                                            ) : (
+                                                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                                            )}
+                                        </BreadcrumbItem>
+                                    </React.Fragment>
                                 ))}
                                 {breadcrumbs.length === 0 && title !== "总览" && (
                                     <>

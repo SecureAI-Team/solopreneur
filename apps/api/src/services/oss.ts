@@ -1,8 +1,24 @@
 /**
  * 阿里云OSS文件上传服务
+ * 支持本地开发模式（无需OSS配置）
  */
 
 import OSS from 'ali-oss';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// 检查是否使用本地模式（没有OSS配置时）
+const isLocalMode = !process.env.ALIYUN_OSS_REGION || !process.env.ALIYUN_OSS_BUCKET;
+
+// 本地存储目录
+const LOCAL_UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+
+// 确保本地上传目录存在
+function ensureLocalDir() {
+    if (!fs.existsSync(LOCAL_UPLOAD_DIR)) {
+        fs.mkdirSync(LOCAL_UPLOAD_DIR, { recursive: true });
+    }
+}
 
 // 创建OSS客户端
 function createClient(): OSS {
@@ -31,7 +47,7 @@ export interface UploadResult {
 }
 
 /**
- * 上传文件到OSS
+ * 上传文件到OSS或本地
  */
 export async function uploadFile(
     file: Buffer | Blob,
@@ -41,13 +57,11 @@ export async function uploadFile(
         contentType?: string;
     }
 ): Promise<UploadResult> {
-    const client = createClient();
-
     // 生成唯一文件名
     const timestamp = Date.now();
     const ext = filename.split('.').pop() || '';
     const folder = options?.folder || 'uploads';
-    const objectName = `${folder}/${timestamp}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const objectName = `${timestamp}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
     // 转换Blob为Buffer
     let buffer: Buffer;
@@ -58,8 +72,24 @@ export async function uploadFile(
         buffer = file;
     }
 
-    // 上传文件
-    const result = await client.put(objectName, buffer, {
+    // 本地模式：保存到本地uploads目录
+    if (isLocalMode) {
+        ensureLocalDir();
+        const localPath = path.join(LOCAL_UPLOAD_DIR, objectName);
+        fs.writeFileSync(localPath, buffer);
+
+        return {
+            url: `/uploads/${objectName}`,
+            name: objectName,
+            size: buffer.length,
+            type: options?.contentType || getMimeType(ext),
+        };
+    }
+
+    // OSS模式：上传到阿里云
+    const client = createClient();
+    const ossObjectName = `${folder}/${objectName}`;
+    const result = await client.put(ossObjectName, buffer, {
         headers: {
             'Content-Type': options?.contentType || getMimeType(ext),
         },
@@ -67,7 +97,7 @@ export async function uploadFile(
 
     return {
         url: result.url,
-        name: objectName,
+        name: ossObjectName,
         size: buffer.length,
         type: options?.contentType || getMimeType(ext),
     };
@@ -138,6 +168,16 @@ export async function getSignedUrl(
  * 删除文件
  */
 export async function deleteFile(objectName: string): Promise<void> {
+    // 本地模式
+    if (isLocalMode) {
+        const localPath = path.join(LOCAL_UPLOAD_DIR, objectName);
+        if (fs.existsSync(localPath)) {
+            fs.unlinkSync(localPath);
+        }
+        return;
+    }
+
+    // OSS模式
     const client = createClient();
     await client.delete(objectName);
 }
@@ -146,6 +186,27 @@ export async function deleteFile(objectName: string): Promise<void> {
  * 列出文件
  */
 export async function listFiles(prefix: string, maxKeys: number = 100) {
+    // 本地模式：返回本地uploads目录的文件
+    if (isLocalMode) {
+        ensureLocalDir();
+        try {
+            const files = fs.readdirSync(LOCAL_UPLOAD_DIR);
+            return files.slice(0, maxKeys).map(filename => {
+                const filepath = path.join(LOCAL_UPLOAD_DIR, filename);
+                const stats = fs.statSync(filepath);
+                return {
+                    name: filename,
+                    url: `/uploads/${filename}`,
+                    size: stats.size,
+                    lastModified: stats.mtime.toISOString(),
+                };
+            });
+        } catch (error) {
+            return [];
+        }
+    }
+
+    // OSS模式
     const client = createClient();
     const result = await client.list({
         prefix,

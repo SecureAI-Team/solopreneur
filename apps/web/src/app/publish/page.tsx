@@ -149,14 +149,27 @@ export default function PublishPage() {
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-semibold truncate">{post.title || '无标题'}</p>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        {/* Mock Platform Icons for now since API might not return parsed platforms yet */}
-                                                        {post.platforms && JSON.parse(post.platforms).length > 0 ? (
-                                                            <span className="text-sm text-muted-foreground">
-                                                                发布至: {JSON.parse(post.platforms).join(', ')}
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-sm text-muted-foreground">未选择平台</span>
-                                                        )}
+                                                        {/* Safely parse platforms - could be array, JSON string, or comma-separated string */}
+                                                        {(() => {
+                                                            let platformList: string[] = [];
+                                                            if (Array.isArray(post.platforms)) {
+                                                                platformList = post.platforms;
+                                                            } else if (typeof post.platforms === 'string' && post.platforms) {
+                                                                try {
+                                                                    platformList = JSON.parse(post.platforms);
+                                                                } catch {
+                                                                    // Not valid JSON, might be comma-separated or single value
+                                                                    platformList = post.platforms.split(',').map((s: string) => s.trim());
+                                                                }
+                                                            }
+                                                            return platformList.length > 0 ? (
+                                                                <span className="text-sm text-muted-foreground">
+                                                                    发布至: {platformList.join(', ')}
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-sm text-muted-foreground">未选择平台</span>
+                                                            );
+                                                        })()}
                                                     </div>
                                                     <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
                                                         <Clock className="size-3" />

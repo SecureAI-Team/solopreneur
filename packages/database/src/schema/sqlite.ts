@@ -88,6 +88,32 @@ export const aiConversations = sqliteTable('ai_conversations', {
     updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+// 自动化规则配置表
+export const automationRules = sqliteTable('automation_rules', {
+    id: uuidPK(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    type: text('type').notNull(), // auto_reply, auto_like, cross_sync, ai_optimize
+    isEnabled: boolean('is_enabled').default(false),
+    config: text('config', { mode: 'json' }).$type<Record<string, any>>(),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// 评论表
+export const comments = sqliteTable('comments', {
+    id: uuidPK(),
+    userId: text('user_id').references(() => users.id).notNull(),
+    platform: text('platform').notNull(),
+    content: text('content').notNull(),
+    authorName: text('author_name'),
+    authorAvatar: text('author_avatar'),
+    postTitle: text('post_title'),
+    isReplied: boolean('is_replied').default(false),
+    replyContent: text('reply_content'),
+    repliedAt: timestamp('replied_at'),
+    createdAt: timestamp('created_at').defaultNow(),
+});
+
 // ===============================
 // Relations for db.query API
 // ===============================

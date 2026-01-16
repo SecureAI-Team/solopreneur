@@ -83,9 +83,9 @@ export const api = {
         delete: (id: string) => fetcher<void>(`/content/${id}`, {
             method: 'DELETE',
         }),
-        publish: (id: string, platforms: string[]) => fetcher<any>(`/content/${id}/publish`, {
+        publish: (id: string, platforms: string[], scheduledAt?: string) => fetcher<any>(`/content/${id}/publish`, {
             method: 'POST',
-            body: JSON.stringify({ platforms }),
+            body: JSON.stringify({ platforms, scheduledAt }),
         }),
     },
     upload: {
@@ -117,6 +117,7 @@ export const api = {
         getOverview: () => fetcher<any>('/analytics/dashboard'),
         getTrend: (days?: number) => fetcher<any>(`/analytics/trend?days=${days || 7}`),
         getTopContent: (limit?: number) => fetcher<any>(`/analytics/top-content?limit=${limit || 5}`),
+        getAudience: () => fetcher<any>('/analytics/audience'),
     },
     comments: {
         list: () => fetcher<any>('/comments'),
@@ -142,6 +143,13 @@ export const api = {
         connectBilibili: (code: string) => fetcher<any>('/platforms/bilibili/callback', {
             method: 'POST',
             body: JSON.stringify({ code }),
+        }),
+    },
+    automation: {
+        list: () => fetcher<any>('/automation'),
+        toggle: (type: string, isEnabled: boolean) => fetcher<any>('/automation/toggle', {
+            method: 'POST',
+            body: JSON.stringify({ type, isEnabled }),
         }),
     }
 };

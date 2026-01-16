@@ -36,6 +36,9 @@ export default function InboxPage() {
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState('all');
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyContent, setReplyContent] = useState('');
+    const [sending, setSending] = useState(false);
 
     useEffect(() => {
         loadComments();
@@ -55,15 +58,38 @@ export default function InboxPage() {
         }
     };
 
-    const handleReply = (id: string) => {
-        toast.promise(
-            new Promise(resolve => setTimeout(resolve, 1000)),
-            {
-                loading: '发送回复...',
-                success: '回复成功！(Mock)',
-                error: '回复失败'
+    const toggleReplyInput = (id: string) => {
+        if (replyingTo === id) {
+            setReplyingTo(null);
+            setReplyContent('');
+        } else {
+            setReplyingTo(id);
+            setReplyContent('');
+        }
+    };
+
+    const handleSendReply = async (id: string) => {
+        if (!replyContent.trim()) {
+            toast.error('请输入回复内容');
+            return;
+        }
+        setSending(true);
+        try {
+            const res = await api.comments.reply(id, replyContent);
+            if (res.success) {
+                toast.success('回复成功！');
+                setReplyingTo(null);
+                setReplyContent('');
+                // Mark as replied locally
+                setComments(prev => prev.map(c => c.id === id ? { ...c, isReplied: true } : c));
+            } else {
+                toast.error(res.error || '回复失败');
             }
-        );
+        } catch (error) {
+            toast.error('发送回复出错');
+        } finally {
+            setSending(false);
+        }
     };
 
     const filteredComments = activeFilter === 'all'
@@ -150,13 +176,13 @@ export default function InboxPage() {
                                                         赞
                                                     </Button>
                                                     <Button
-                                                        variant="ghost"
+                                                        variant={replyingTo === comment.id ? 'default' : 'ghost'}
                                                         size="sm"
                                                         className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                                                        onClick={() => handleReply(comment.id)}
+                                                        onClick={() => toggleReplyInput(comment.id)}
                                                     >
                                                         <CornerDownRight className="h-3.5 w-3.5 mr-1.5" />
-                                                        回复
+                                                        {replyingTo === comment.id ? '取消' : '回复'}
                                                     </Button>
                                                     {comment.isReplied && (
                                                         <span className="text-xs text-green-600 flex items-center ml-auto">
@@ -164,6 +190,26 @@ export default function InboxPage() {
                                                         </span>
                                                     )}
                                                 </div>
+                                                {replyingTo === comment.id && (
+                                                    <div className="mt-3 flex gap-2">
+                                                        <Input
+                                                            placeholder="输入回复内容..."
+                                                            value={replyContent}
+                                                            onChange={(e) => setReplyContent(e.target.value)}
+                                                            className="flex-1"
+                                                            disabled={sending}
+                                                            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendReply(comment.id)}
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handleSendReply(comment.id)}
+                                                            disabled={sending || !replyContent.trim()}
+                                                            className="bg-violet-600 hover:bg-violet-700"
+                                                        >
+                                                            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : '发送'}
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

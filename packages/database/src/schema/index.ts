@@ -80,3 +80,14 @@ export const aiConversations = pgTable('ai_conversations', {
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+// 自动化规则配置表
+export const automationRules = pgTable('automation_rules', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id').references(() => users.id).notNull(),
+    type: varchar('type', { length: 50 }).notNull(), // auto_reply, auto_like, cross_sync, ai_optimize
+    isEnabled: boolean('is_enabled').default(false),
+    config: jsonb('config').$type<Record<string, any>>(), // 额外配置，如回复模板
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+});

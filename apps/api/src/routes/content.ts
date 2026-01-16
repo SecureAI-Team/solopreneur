@@ -187,7 +187,7 @@ contentRoutes.post('/:id/publish', async (c) => {
     const userId = await getUserId(c);
 
     try {
-        const { platforms } = await c.req.json();
+        const { platforms, scheduledAt } = await c.req.json();
 
         // 1. 获取内容详情
         const content = await db.query.contents.findFirst({
@@ -196,9 +196,29 @@ contentRoutes.post('/:id/publish', async (c) => {
 
         if (!content) return c.json({ success: false, error: '内容不存在' }, 404);
 
-        // 2. 更新状态为 publishing
+        // Check for scheduling
+        if (scheduledAt) {
+            const scheduleDate = new Date(scheduledAt);
+            if (scheduleDate > new Date()) {
+                await db.update(contents)
+                    .set({
+                        status: 'scheduled',
+                        scheduledAt: scheduleDate,
+                        platforms: platforms || content.platforms
+                    })
+                    .where(eq(contents.id, id));
+
+                return c.json({
+                    success: true,
+                    message: '内容已加入发布计划',
+                    data: { contentId: id, status: 'scheduled', scheduledAt }
+                });
+            }
+        }
+
+        // 2. 更新状态为 publishing (Immediate publish)
         await db.update(contents)
-            .set({ status: 'scheduled' })
+            .set({ status: 'scheduled' }) // Keep as scheduled or change to 'publishing' based on preference, logical flow uses scheduled->success
             .where(eq(contents.id, id));
 
         const results = [];

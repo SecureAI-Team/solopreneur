@@ -5,30 +5,35 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { PenLine, Image, Video, FileText, Plus, Sparkles, Loader2 } from "lucide-react"
+import { PenLine, Image, Video, FileText, Plus, Sparkles, Loader2, Trash2 } from "lucide-react"
 import { api } from "@/lib/api"
+import { toast } from "sonner"
 import Link from "next/link"
 
 const contentTypes = [
     {
+        type: "video",
         icon: Video,
         title: "短视频",
         description: "适合抖音、快手、视频号",
         color: "from-rose-500 to-pink-500",
     },
     {
+        type: "image",
         icon: Image,
         title: "图文笔记",
         description: "适合小红书、微博",
         color: "from-amber-500 to-orange-500",
     },
     {
+        type: "article",
         icon: FileText,
         title: "长文章",
         description: "适合公众号、B站专栏",
         color: "from-blue-500 to-cyan-500",
     },
     {
+        type: "free",
         icon: PenLine,
         title: "自由创作",
         description: "空白画布自由发挥",
@@ -53,22 +58,47 @@ function formatTimeAgo(dateString: string): string {
 export default function ContentPage() {
     const [drafts, setDrafts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [deleting, setDeleting] = useState<string | null>(null);
+
+    const fetchDrafts = async () => {
+        try {
+            const res = await api.content.list({ status: 'draft' });
+            if (res.success && res.data) {
+                setDrafts(res.data);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchDrafts = async () => {
-            try {
-                const res = await api.content.list({ status: 'draft' });
-                if (res.success && res.data) {
-                    setDrafts(res.data);
-                }
-            } catch (e) {
-                console.error(e);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchDrafts();
     }, []);
+
+    const handleDelete = async (id: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!confirm('确定要删除这个草稿吗？此操作不可恢复。')) return;
+
+        setDeleting(id);
+        try {
+            const res = await api.content.delete(id);
+            if (res.success) {
+                toast.success('删除成功');
+                fetchDrafts();
+            } else {
+                toast.error(res.error || '删除失败');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error('删除失败');
+        } finally {
+            setDeleting(null);
+        }
+    };
 
     return (
         <DashboardLayout title="内容工作台" breadcrumbs={[{ label: "内容工作台" }]}>
@@ -78,22 +108,23 @@ export default function ContentPage() {
                     <h2 className="text-lg font-semibold mb-4">创建新内容</h2>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         {contentTypes.map((type) => (
-                            <Card
-                                key={type.title}
-                                className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group"
-                            >
-                                <CardContent className="pt-6">
-                                    <div className="flex flex-col items-center text-center space-y-3">
-                                        <div className={`size-14 rounded-2xl bg-gradient-to-br ${type.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
-                                            <type.icon className="size-7" />
+                            <Link key={type.title} href={`/content/create?type=${type.type}`}>
+                                <Card
+                                    className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group h-full"
+                                >
+                                    <CardContent className="pt-6">
+                                        <div className="flex flex-col items-center text-center space-y-3">
+                                            <div className={`size-14 rounded-2xl bg-gradient-to-br ${type.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
+                                                <type.icon className="size-7" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold">{type.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{type.description}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-semibold">{type.title}</h3>
-                                            <p className="text-sm text-muted-foreground">{type.description}</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                    </CardContent>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                 </div>
@@ -127,9 +158,11 @@ export default function ContentPage() {
                             <CardTitle>草稿箱</CardTitle>
                             <CardDescription>你有 {drafts.length} 个未完成的内容</CardDescription>
                         </div>
-                        <Button variant="outline" size="sm">
-                            查看全部
-                        </Button>
+                        <Link href="/content/list">
+                            <Button variant="outline" size="sm">
+                                查看全部
+                            </Button>
+                        </Link>
                     </CardHeader>
                     <CardContent>
                         {loading ? (
@@ -161,9 +194,24 @@ export default function ContentPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <Button variant="ghost" size="sm">
-                                            继续编辑
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={(e) => handleDelete(draft.id, e)}
+                                                disabled={deleting === draft.id}
+                                                className="text-muted-foreground hover:text-destructive"
+                                            >
+                                                {deleting === draft.id ? (
+                                                    <Loader2 className="size-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="size-4" />
+                                                )}
+                                            </Button>
+                                            <Button variant="ghost" size="sm">
+                                                继续编辑
+                                            </Button>
+                                        </div>
                                     </Link>
                                 ))}
                             </div>

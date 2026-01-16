@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FileUploader } from '@/components/upload/file-uploader';
 
@@ -31,6 +31,7 @@ export function RichEditor({
     className
 }: RichEditorProps) {
     const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+    const isInternalChange = useRef(false);
 
     const editor = useEditor({
         extensions: [
@@ -67,6 +68,14 @@ export function RichEditor({
             editor.chain().focus().setLink({ href: url }).run();
         }
     }, [editor]);
+
+    // Sync external content changes to editor
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            // Avoid cursor jumping on every keystroke by only updating when content truly differs
+            editor.commands.setContent(content, false);
+        }
+    }, [content, editor]);
 
     if (!editor) {
         return null;

@@ -10,6 +10,7 @@ import {
     Camera, Crown, ChevronRight, Moon, Sun, Check, Loader2
 } from "lucide-react"
 import { useState } from "react"
+import { useTheme } from "next-themes"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 
@@ -23,7 +24,7 @@ const platformsData = [
 ]
 
 export default function SettingsPage() {
-    const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
+    const { theme, setTheme } = useTheme();
     const [loadingPlatform, setLoadingPlatform] = useState<string | null>(null);
 
     const handleConnect = async (platformId: string) => {

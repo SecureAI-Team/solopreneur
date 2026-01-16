@@ -10,6 +10,7 @@ import { aiRoutes } from './routes/ai';
 import { uploadRoutes } from './routes/upload';
 import { platformRoutes } from './routes/platform';
 import { commentRoutes } from './routes/comments';
+import { automationRoutes } from './routes/automation';
 
 const app = new Hono();
 
@@ -96,7 +97,9 @@ app.route('/api/analytics', analyticsRoutes);
 app.route('/api/ai', aiRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/platforms', platformRoutes);
+app.route('/api/platforms', platformRoutes);
 app.route('/api/comments', commentRoutes);
+app.route('/api/automation', automationRoutes);
 
 // 错误处理
 app.onError((err, c) => {
