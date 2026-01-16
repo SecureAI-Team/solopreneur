@@ -17,6 +17,7 @@ import {
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
+import { FileUploader } from '@/components/upload/file-uploader';
 
 // 平台选项... (不变)
 const platforms = [
@@ -204,16 +205,47 @@ export default function CreateContentPage() {
 
                         {/* 编辑区域标签页 */}
                         <Tabs value={activeTab} onValueChange={setActiveTab}>
-                            <TabsList className="grid w-full grid-cols-2">
+                            <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="editor">
                                     <FileText className="h-4 w-4 mr-2" />
                                     内容编辑
+                                </TabsTrigger>
+                                <TabsTrigger value="media">
+                                    <Video className="h-4 w-4 mr-2" />
+                                    媒体上传
                                 </TabsTrigger>
                                 <TabsTrigger value="cover">
                                     <Image className="h-4 w-4 mr-2" />
                                     封面设计
                                 </TabsTrigger>
                             </TabsList>
+
+                            <TabsContent value="media" className="mt-4">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="text-lg">上传素材</CardTitle>
+                                        <CardDescription>
+                                            支持上传视频或图片，将自动同步到发布平台
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <FileUploader
+                                            type={contentType === 'video' ? 'video' : 'image'}
+                                            onUploadSuccess={(url) => {
+                                                // 简单处理：将链接追加到内容底部，或者存入 mediaUrls (需后端支持)
+                                                // 这里我们追加到编辑器内容里，模拟插入
+                                                if (contentType === 'video') {
+                                                    setContent(prev => prev + `<p><video src="${url}" controls width="100%"></video></p>`);
+                                                } else {
+                                                    setContent(prev => prev + `<p><img src="${url}" alt="Uploaded" /></p>`);
+                                                }
+                                                // 同时可以切换回编辑器tab查看
+                                                setActiveTab('editor');
+                                            }}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
 
                             <TabsContent value="editor" className="mt-4">
                                 <Card>

@@ -1,0 +1,84 @@
+<!--pages/publish/index.wxml-->
+<view class="container">
+  
+  <!-- Media Uploader -->
+  <view class="section media-section">
+    <view class="media-grid">
+      <block wx:for="{{mediaFiles}}" wx:key="tempFilePath">
+        <view class="media-item">
+          <image 
+            class="media-preview" 
+            src="{{item.tempFilePath}}" 
+            mode="aspectFill"
+            wx:if="{{item.fileType === 'image' || mediaType === 'image'}}"
+          ></image>
+          <video 
+            class="media-preview" 
+            src="{{item.tempFilePath}}" 
+            object-fit="cover"
+            wx:if="{{item.fileType === 'video' || mediaType === 'video'}}"
+            show-play-btn="{{false}}" 
+            controls="{{false}}"
+          ></video>
+          <view class="delete-btn" bindtap="removeMedia" data-index="{{index}}">×</view>
+        </view>
+      </block>
+      <view class="add-btn" bindtap="chooseMedia" wx:if="{{mediaFiles.length < 9}}">
+        <text class="plus">+</text>
+        <text class="tip" wx:if="{{mediaFiles.length === 0}}">添加素材</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Input Fields -->
+  <view class="section input-section">
+    <view class="input-group">
+      <input 
+        class="input-title" 
+        placeholder="填写标题会有更多赞哦~" 
+        placeholder-class="placeholder"
+        value="{{title}}"
+        bindinput="handleInput"
+        data-field="title"
+      />
+      <view class="ai-btn" bindtap="handleAITitle" wx:if="{{title.length > 2}}">✨ 优化</view>
+    </view>
+    <view class="divider"></view>
+    <view class="input-wrapper">
+        <textarea 
+        class="input-body" 
+        placeholder="添加正文" 
+        placeholder-class="placeholder"
+        value="{{body}}"
+        bindinput="handleInput"
+        data-field="body"
+        maxlength="1000"
+        auto-height
+        ></textarea>
+        <!-- <view class="ai-float-btn" bindtap="handleAIBody">✨ 润色</view> -->
+    </view>
+  </view>
+
+  <!-- Platform Selector -->
+  <view class="section platform-section">
+    <view class="section-title">发布到</view>
+    <checkbox-group bindchange="handlePlatformChange">
+      <label class="platform-item" wx:for="{{platforms}}" wx:key="id">
+        <checkbox value="{{item.id}}" checked="{{item.checked}}" color="#7c3aed"/>
+        <text>{{item.name}}</text>
+      </label>
+    </checkbox-group>
+  </view>
+
+  <!-- Submit Button -->
+  <view class="footer">
+    <button 
+      class="submit-btn" 
+      bindtap="submit" 
+      disabled="{{submitting}}"
+      loading="{{submitting}}"
+    >
+      发布
+    </button>
+  </view>
+</view>

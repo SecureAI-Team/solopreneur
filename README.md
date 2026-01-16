@@ -2,7 +2,7 @@
 
 > **"一人军团"的AI驱动多平台内容运营SaaS**
 > 
-> **当前状态**: 🚧 Alpha开发中 (进度 75%) - 微信公众号对接完成
+> **当前状态**: 🚀 Alpha v0.3.1 (已就绪) - 认证/数据库/API已打通
 
 帮助个体创作者以最低成本实现专业级多平台运营，让每一个人都能成为高效的内容创业者。
 
@@ -36,10 +36,10 @@
 | 层级 | 技术 |
 |------|------|
 | **前端** | Next.js 16, React 19, TailwindCSS, Shadcn/UI, TipTap |
-| **后端** | Hono, Node.js 20, TypeScript |
-| **数据库** | PostgreSQL + Drizzle ORM |
-| **AI服务** | 阿里云通义千问 (OpenAI SDK兼容) |
-| **部署** | Docker, Nginx, 阿里云ECS |
+| **后端** | Hono, Node.js 20, TypeScript, JWT Auth |
+| **数据库** | PostgreSQL + Drizzle ORM + Redis (BullMQ) |
+| **AI服务** | 阿里云通义千问 (Qwen-Max/Plus) |
+| **部署** | Docker Compose, Aliyun ECS |
 
 ---
 
@@ -48,13 +48,13 @@
 ```
 solopreneur/
 ├── apps/
-│   ├── web/              # Next.js Web应用
-│   ├── api/              # Hono API服务
+│   ├── web/              # Next.js Web应用 (Client & Auth UI)
+│   ├── api/              # Hono API服务 (JWT Secured)
 │   └── miniprogram/      # 微信小程序
 ├── packages/
 │   ├── ai/               # AI服务 (OpenAI SDK + Qwen)
-│   ├── database/         # Drizzle ORM
-│   └── shared/           # 共享类型
+│   ├── database/         # Drizzle ORM Schema
+│   └── shared/           # 共享类型 (Zod Schemas)
 └── deploy/               # Docker配置
 ```
 
@@ -81,11 +81,12 @@ pnpm dev
 ## 🛣️ 产品蓝图
 
 - [x] MVP核心UI
-- [x] AI服务对接
-- [x] 编辑器组件
-- [ ] 数据库连接
-- [ ] 平台OAuth
-- [ ] 生产部署
+- [x] AI服务对接 (Qwen)
+- [x] 编辑器组件 (TipTap)
+- [x] 数据库连接 (PG + Redis)
+- [x] 用户认证 (JWT + WeChat)
+- [ ] 生产环境部署 (Docker Ready)
+- [ ] 抖音/小红书平台接入
 
 ---
 

@@ -12,48 +12,19 @@ interface PlatformData {
     connected: boolean
 }
 
-const platforms: PlatformData[] = [
-    {
-        name: "抖音",
-        icon: "🎵",
-        followers: 12500,
-        views: 65000,
-        engagement: 8.5,
-        connected: true,
-    },
-    {
-        name: "小红书",
-        icon: "📕",
-        followers: 8200,
-        views: 32000,
-        engagement: 12.3,
-        connected: true,
-    },
-    {
-        name: "B站",
-        icon: "📺",
-        followers: 5600,
-        views: 18000,
-        engagement: 6.8,
-        connected: true,
-    },
-    {
-        name: "YouTube",
-        icon: "▶️",
-        followers: 2100,
-        views: 10000,
-        engagement: 4.2,
-        connected: false,
-    },
-    {
-        name: "微信公众号",
-        icon: "💬",
-        followers: 15000,
-        views: 8000,
-        engagement: 3.5,
-        connected: false,
-    },
-]
+
+export interface PlatformData {
+    name: string
+    icon: string
+    followers: number
+    views: number
+    engagement: number
+    connected: boolean
+}
+
+interface PlatformStatsProps {
+    data: PlatformData[];
+}
 
 function formatNumber(num: number): string {
     if (num >= 10000) {
@@ -62,9 +33,9 @@ function formatNumber(num: number): string {
     return num.toLocaleString()
 }
 
-export function PlatformStats() {
-    const connectedPlatforms = platforms.filter(p => p.connected)
-    const disconnectedPlatforms = platforms.filter(p => !p.connected)
+export function PlatformStats({ data }: PlatformStatsProps) {
+    const connectedPlatforms = data.filter(p => p.connected)
+    const disconnectedPlatforms = data.filter(p => !p.connected)
 
     return (
         <Card>

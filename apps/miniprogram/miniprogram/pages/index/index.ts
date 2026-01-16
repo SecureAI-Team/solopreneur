@@ -1,72 +1,82 @@
-// 首页
-const app = getApp<IAppOption>();
+import { api } from '../../utils/api';
 
 Page({
     data: {
-        userInfo: null,
+        userInfo: null as any,
         overview: {
             totalViews: 0,
-            totalFollowers: 0,
-            totalInteractions: 0,
-            estimatedRevenue: 0,
             viewsChange: 0,
-            followersChange: 0,
+            totalFollowers: 0,
+            followersChange: 0
         },
-        topContent: [],
-        loading: true,
+        topContent: [] as any[],
+        loading: true
     },
 
     onLoad() {
-        this.loadData();
+        this.initData();
     },
 
     onShow() {
-        this.setData({ userInfo: app.globalData.userInfo });
+        // Refresh user info if login status changed
+        const token = wx.getStorageSync('token');
+        if (token && !this.data.userInfo) {
+            this.fetchUserInfo();
+        } else if (!token && this.data.userInfo) {
+            this.setData({ userInfo: null });
+        }
     },
 
     onPullDownRefresh() {
-        this.loadData().finally(() => {
+        this.initData().then(() => {
             wx.stopPullDownRefresh();
         });
     },
 
-    async loadData() {
+    async initData() {
+        this.setData({ loading: true });
+
+        const token = wx.getStorageSync('token');
+        if (token) {
+            await this.fetchUserInfo();
+        }
+
         try {
-            this.setData({ loading: true });
-
-            // 获取概览数据
-            const overviewRes = await app.request('/analytics/overview');
-            if (overviewRes.success) {
-                this.setData({ overview: overviewRes.data });
+            const res = await api.analytics.getOverview();
+            if (res.success && res.data) {
+                this.setData({
+                    overview: res.data.overview,
+                    topContent: res.data.topContent || [],
+                    loading: false
+                });
             }
-
-            // 获取热门内容
-            const topContentRes = await app.request('/analytics/top-content?limit=3');
-            if (topContentRes.success) {
-                this.setData({ topContent: topContentRes.data });
-            }
-        } catch (e) {
-            console.error('加载数据失败', e);
-            wx.showToast({ title: '加载失败', icon: 'error' });
-        } finally {
+        } catch (err) {
+            console.error('Fetch home data failed', err);
             this.setData({ loading: false });
         }
     },
 
-    formatNumber(num: number): string {
-        if (num >= 10000) {
-            return (num / 10000).toFixed(1) + '万';
+    async fetchUserInfo() {
+        try {
+            const res = await api.auth.me();
+            if (res.success) {
+                this.setData({ userInfo: res.data });
+            }
+        } catch (e) {
+            // Ignore, maybe token expired
         }
-        return num.toLocaleString();
     },
 
-    // 跳转到内容创建
     goToCreate() {
-        wx.navigateTo({ url: '/pages/content/create' });
+        wx.switchTab({ url: '/pages/publish/index' });
     },
 
-    // 跳转到AI助手
     goToAI() {
-        wx.navigateTo({ url: '/pages/ai/index' });
+        wx.showToast({ title: 'AI助手即将上线', icon: 'none' });
     },
+
+    goToDetail(e: any) {
+        // const id = e.currentTarget.dataset.id;
+        wx.showToast({ title: '详情页开发中', icon: 'none' });
+    }
 });

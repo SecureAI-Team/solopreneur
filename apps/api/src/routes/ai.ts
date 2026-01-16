@@ -7,8 +7,7 @@ import {
     generateInsights,
     type ChatMessage
 } from '@solomedia/ai';
-import { db } from '../db';
-import { aiConversations } from '@solomedia/database';
+import { db, aiConversations } from '../db';
 import { eq } from 'drizzle-orm';
 
 export const aiRoutes = new Hono();

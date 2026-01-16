@@ -1,8 +1,13 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { PenLine, Image, Video, FileText, Plus, Sparkles } from "lucide-react"
+import { PenLine, Image, Video, FileText, Plus, Sparkles, Loader2 } from "lucide-react"
+import { api } from "@/lib/api"
+import Link from "next/link"
 
 const contentTypes = [
     {
@@ -31,13 +36,40 @@ const contentTypes = [
     },
 ]
 
-const drafts = [
-    { id: "1", title: "春节回家好物推荐", type: "图文", updatedAt: "2分钟前" },
-    { id: "2", title: "周末Vlog脚本", type: "视频", updatedAt: "1小时前" },
-    { id: "3", title: "2026年度总结", type: "文章", updatedAt: "昨天" },
-]
+function formatTimeAgo(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return '刚刚';
+    if (diffMins < 60) return `${diffMins}分钟前`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}小时前`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return '昨天';
+    return `${diffDays}天前`;
+}
 
 export default function ContentPage() {
+    const [drafts, setDrafts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchDrafts = async () => {
+            try {
+                const res = await api.content.list({ status: 'draft' });
+                if (res.success && res.data) {
+                    setDrafts(res.data);
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDrafts();
+    }, []);
+
     return (
         <DashboardLayout title="内容工作台" breadcrumbs={[{ label: "内容工作台" }]}>
             <div className="space-y-6">
@@ -80,9 +112,11 @@ export default function ContentPage() {
                                 </p>
                             </div>
                         </div>
-                        <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700">
-                            开始创作
-                        </Button>
+                        <Link href="/content/create">
+                            <Button className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700">
+                                开始创作
+                            </Button>
+                        </Link>
                     </CardContent>
                 </Card>
 
@@ -98,34 +132,46 @@ export default function ContentPage() {
                         </Button>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-3">
-                            {drafts.map((draft) => (
-                                <div
-                                    key={draft.id}
-                                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="size-10 rounded-lg bg-muted flex items-center justify-center">
-                                            <FileText className="size-5 text-muted-foreground" />
-                                        </div>
-                                        <div>
-                                            <p className="font-medium">{draft.title}</p>
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Badge variant="outline" className="text-xs">{draft.type}</Badge>
-                                                <span>•</span>
-                                                <span>{draft.updatedAt}</span>
+                        {loading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : drafts.length === 0 ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                暂无草稿，快去创作吧！
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {drafts.map((draft) => (
+                                    <Link
+                                        key={draft.id}
+                                        href={`/content/create?id=${draft.id}`}
+                                        className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="size-10 rounded-lg bg-muted flex items-center justify-center">
+                                                <FileText className="size-5 text-muted-foreground" />
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{draft.title || '无标题'}</p>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <Badge variant="outline" className="text-xs">{draft.type || '图文'}</Badge>
+                                                    <span>•</span>
+                                                    <span>{formatTimeAgo(draft.updatedAt || draft.createdAt)}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <Button variant="ghost" size="sm">
-                                        继续编辑
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
+                                        <Button variant="ghost" size="sm">
+                                            继续编辑
+                                        </Button>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
         </DashboardLayout>
     )
 }
+

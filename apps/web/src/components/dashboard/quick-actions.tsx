@@ -10,6 +10,7 @@ import {
     Sparkles,
     Link2
 } from "lucide-react"
+import Link from "next/link"
 
 const quickActions = [
     {
@@ -63,21 +64,22 @@ export function QuickActions() {
                 <CardTitle className="text-base">快速操作</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {quickActions.map((action) => (
-                        <Button
-                            key={action.label}
-                            variant="outline"
-                            className="h-auto flex-col gap-2 py-4 hover:border-primary/50 group relative overflow-hidden"
-                        >
-                            <div className={`size-10 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
-                                <action.icon className="size-5" />
-                            </div>
-                            <div className="text-center">
-                                <p className="font-medium text-sm">{action.label}</p>
-                                <p className="text-xs text-muted-foreground">{action.description}</p>
-                            </div>
-                        </Button>
+                        <Link href={action.href.includes('/settings/platforms') ? '/settings' : action.href} key={action.label} legacyBehavior={false}>
+                            <Button
+                                variant="outline"
+                                className="h-auto flex-col gap-3 py-6 hover:border-primary/50 hover:bg-muted/30 group relative overflow-hidden transition-all duration-300 border-dashed border-2"
+                            >
+                                <div className={`size-12 rounded-2xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white shadow-md group-hover:scale-110 group-hover:shadow-lg transition-all duration-300`}>
+                                    <action.icon className="size-6" />
+                                </div>
+                                <div className="text-center space-y-1">
+                                    <p className="font-semibold text-sm">{action.label}</p>
+                                    <p className="text-xs text-muted-foreground">{action.description}</p>
+                                </div>
+                            </Button>
+                        </Link>
                     ))}
                 </div>
             </CardContent>

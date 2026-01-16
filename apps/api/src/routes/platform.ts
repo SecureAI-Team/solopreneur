@@ -1,8 +1,7 @@
 
 import { Hono } from 'hono';
 import { verify } from 'hono/jwt';
-import { db } from '../db';
-import { platformConnections } from '@solomedia/database';
+import { db, platformConnections } from '../db';
 
 export const platformRoutes = new Hono();
 
@@ -40,7 +39,7 @@ platformRoutes.post('/wechat/callback', async (c) => {
     let userId: string;
     try {
         const token = authHeader.slice(7);
-        const payload = await verify(token, JWT_SECRET);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
         userId = payload.userId as string;
     } catch {
         return c.json({ success: false, error: 'Token无效' }, 401);
@@ -116,6 +115,99 @@ platformRoutes.post('/wechat/callback', async (c) => {
 
     } catch (error: any) {
         console.error('WeChat callback error:', error);
+        return c.json({ success: false, error: error.message }, 500);
+    }
+});
+// 抖音 (Douyin) Auth
+// ------------------------------------------------------------------
+
+// 获取抖音授权URL
+platformRoutes.get('/douyin/auth-url', (c) => {
+    // 模拟授权页 (实际是 Open Platform URL)
+    // 这里直接重定向回 callback 处理页面
+    const redirectUri = encodeURIComponent(`${DOMAIN}/settings/platforms/douyin/callback`);
+    const state = 'STATE';
+    const scope = 'user_info,video.create,video.list';
+
+    // 模拟官方URL
+    const url = `https://open.douyin.com/platform/oauth/connect/?client_key=${process.env.DOUYIN_CLIENT_KEY || 'mock_key'}&response_type=code&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`;
+
+    return c.json({
+        success: true,
+        data: { url }
+    });
+});
+
+// 处理抖音回调
+platformRoutes.post('/douyin/callback', async (c) => {
+    const { code } = await c.req.json();
+
+    // 验证用户
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+        return c.json({ success: false, error: '未授权' }, 401);
+    }
+
+    let userId: string;
+    try {
+        const token = authHeader.slice(7);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
+        userId = payload.userId as string;
+    } catch {
+        return c.json({ success: false, error: 'Token无效' }, 401);
+    }
+
+    try {
+        // Mock Token Exchange
+        // 实际: POST https://open.douyin.com/oauth/access_token/
+
+        const tokenData = {
+            access_token: 'mock_douyin_at_' + Date.now(),
+            open_id: 'mock_douyin_openid_' + code.slice(0, 5),
+            expires_in: 1296000,
+            refresh_token: 'mock_douyin_rt'
+        };
+
+        const userData = {
+            nickname: '抖音达人_Mock',
+            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Douyin'
+        };
+
+        // 保存连接
+        await db.insert(platformConnections).values({
+            userId: userId,
+            platform: 'douyin',
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            platformUserId: tokenData.open_id,
+            platformUsername: userData.nickname,
+            platformAvatar: userData.avatar,
+            expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+            isActive: true,
+        }).onConflictDoUpdate({
+            target: [platformConnections.userId, platformConnections.platform],
+            set: {
+                accessToken: tokenData.access_token,
+                refreshToken: tokenData.refresh_token,
+                platformUsername: userData.nickname,
+                platformAvatar: userData.avatar,
+                expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+                isActive: true,
+                updatedAt: new Date(),
+            }
+        }).catch(() => { });
+
+        return c.json({
+            success: true,
+            data: {
+                platform: 'douyin',
+                name: userData.nickname,
+                connected: true
+            }
+        });
+
+    } catch (error: any) {
+        console.error('Douyin callback error:', error);
         return c.json({ success: false, error: error.message }, 500);
     }
 });

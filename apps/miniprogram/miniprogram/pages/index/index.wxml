@@ -1,21 +1,36 @@
 <!--首页-->
+<wxs module="utils">
+var formatNumber = function(n) {
+  if (!n) return 0;
+  if (n >= 10000) {
+    return (n / 10000).toFixed(1) + '万';
+  }
+  return n;
+}
+module.exports = {
+  formatNumber: formatNumber
+}
+</wxs>
 <view class="container">
   <!-- 欢迎语 -->
   <view class="welcome" wx:if="{{userInfo}}">
     <text class="welcome-text">👋 欢迎回来，{{userInfo.nickname || '创作者'}}</text>
   </view>
+  <view class="welcome" wx:else bindtap="goToProfile">
+    <text class="welcome-text">👋 请登录查看数据</text>
+  </view>
 
   <!-- 核心指标 -->
   <view class="stats-grid">
     <view class="stat-card">
-      <text class="stat-value">{{overview.totalViews >= 10000 ? (overview.totalViews / 10000).toFixed(1) + '万' : overview.totalViews}}</text>
+      <text class="stat-value">{{utils.formatNumber(overview.totalViews)}}</text>
       <text class="stat-label">总播放量</text>
       <text class="stat-change {{overview.viewsChange >= 0 ? 'positive' : 'negative'}}">
         {{overview.viewsChange >= 0 ? '+' : ''}}{{overview.viewsChange}}%
       </text>
     </view>
     <view class="stat-card">
-      <text class="stat-value">{{overview.totalFollowers >= 10000 ? (overview.totalFollowers / 10000).toFixed(1) + '万' : overview.totalFollowers}}</text>
+      <text class="stat-value">{{utils.formatNumber(overview.totalFollowers)}}</text>
       <text class="stat-label">总粉丝数</text>
       <text class="stat-change {{overview.followersChange >= 0 ? 'positive' : 'negative'}}">
         {{overview.followersChange >= 0 ? '+' : ''}}{{overview.followersChange}}%
@@ -35,14 +50,14 @@
         <text class="action-icon">✨</text>
         <text class="action-text">AI助手</text>
       </view>
-      <view class="action-btn" bindtap="">
+      <navigator class="action-btn" url="/pages/analytics/index" open-type="switchTab">
         <text class="action-icon">📊</text>
         <text class="action-text">查看数据</text>
-      </view>
-      <view class="action-btn" bindtap="">
+      </navigator>
+      <navigator class="action-btn" url="/pages/publish/index" open-type="switchTab">
         <text class="action-icon">📤</text>
         <text class="action-text">发布内容</text>
-      </view>
+      </navigator>
     </view>
   </view>
 
@@ -61,7 +76,7 @@
         <view class="content-rank">{{index + 1}}</view>
         <view class="content-info">
           <text class="content-title">{{item.title}}</text>
-          <text class="content-meta">{{item.platform}} · {{item.views >= 10000 ? (item.views / 10000).toFixed(1) + '万' : item.views}}播放</text>
+          <text class="content-meta">{{item.platform}} · {{utils.formatNumber(item.views)}}播放</text>
         </view>
       </view>
     </view>

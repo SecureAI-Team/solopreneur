@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=solomedia
+      - POSTGRES_PASSWORD=solomedia_password_123
+      - POSTGRES_DB=solomedia
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_dev:/data
+    restart: always
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:

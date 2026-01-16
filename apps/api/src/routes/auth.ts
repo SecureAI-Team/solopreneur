@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import { sign, verify } from 'hono/jwt';
-import { hash, compare } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
+const { hash, compare } = bcrypt;
 import { loginSchema, registerSchema, wxLoginSchema } from '@solomedia/shared';
-import { db } from '../db';
-import { users } from '@solomedia/database';
+import { db, users } from '../db';
 import { eq } from 'drizzle-orm';
 
 export const authRoutes = new Hono();
@@ -164,7 +164,7 @@ authRoutes.get('/me', async (c) => {
 
     try {
         const token = authHeader.slice(7);
-        const payload = await verify(token, JWT_SECRET);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
 
         // 从数据库查询用户
         const user = await db.query.users.findFirst({

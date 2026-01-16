@@ -1,0 +1,48 @@
+<!--pages/content/index.wxml-->
+<view class="container">
+  <!-- Search & View Toggle -->
+  <view class="header">
+    <view class="search-bar">
+      <icon type="search" size="14"></icon>
+      <input placeholder="搜索内容" bindconfirm="onSearch" confirm-type="search"/>
+    </view>
+    <view class="view-toggle" bindtap="toggleViewMode">
+      <text class="icon">{{viewMode === 'grid' ? '▦' : '≡'}}</text>
+    </view>
+  </view>
+
+  <!-- Tabs -->
+  <view class="tabs">
+    <view 
+      wx:for="{{tabs}}" 
+      wx:key="*this" 
+      class="tab-item {{activeTab === index ? 'active' : ''}}"
+      bindtap="onTabChange"
+      data-index="{{index}}"
+    >
+      {{item}}
+    </view>
+  </view>
+
+  <!-- Content List -->
+  <view class="content-list {{viewMode}}">
+    <block wx:if="{{items.length > 0}}">
+      <view wx:for="{{items}}" wx:key="id" class="content-item" bindtap="goToDetail" data-id="{{item.id}}">
+        <image class="cover" src="{{item.mediaUrls[0] || '/images/home.png'}}" mode="aspectFill"></image>
+        <view class="info">
+          <text class="title">{{item.title}}</text>
+          <view class="meta">
+            <text class="status tag {{item.status}}">{{item.status === 'published' ? '已发布' : (item.status === 'draft' ? '草稿' : '发布中')}}</text>
+            <view class="platforms" wx:if="{{item.platforms && item.platforms.length > 0}}">
+                <text wx:for="{{item.platforms}}" wx:key="*this" class="platform-icon {{item}}">{{item === 'wechat' ? '微' : (item === 'douyin' ? '抖' : (item === 'xiaohongshu' ? '红' : 'B'))}}</text>
+            </view>
+            <text class="date">{{item.createdAt}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+    <view wx:else class="empty-state">
+      <text>暂无内容</text>
+    </view>
+  </view>
+</view>

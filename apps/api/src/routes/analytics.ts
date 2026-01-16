@@ -1,35 +1,27 @@
 import { Hono } from 'hono';
-import { db } from '../db';
-import { analytics, publishRecords, contents } from '@solomedia/database';
+import { db, analytics, publishRecords, contents } from '../db';
 import { eq, sql, desc, and, gte } from 'drizzle-orm';
+import { getDashboardStats } from '../services/stats';
+import { verify } from 'hono/jwt';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export const analyticsRoutes = new Hono();
 
 // 获取概览数据
-analyticsRoutes.get('/overview', async (c) => {
+analyticsRoutes.get('/dashboard', async (c) => {
     try {
-        // 聚合所有发布记录的统计数据
-        const [result] = await db
-            .select({
-                totalViews: sql<number>`sum(${analytics.views})`,
-                totalFollowers: sql<number>`sum(${analytics.followers})`, // 这里简化处理，实际可能需要去重或取最新
-                totalInteractions: sql<number>`sum(${analytics.likes} + ${analytics.comments} + ${analytics.shares})`,
-            })
-            .from(analytics);
+        const authHeader = c.req.header('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) return c.json({ success: false, error: '未授权' }, 401);
+        const token = authHeader.slice(7);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
+        const userId = payload.userId as string;
 
-        // 模拟环比增长数据 (实际需要对比上个周期)
+        const stats = await getDashboardStats(userId);
+
         return c.json({
             success: true,
-            data: {
-                totalViews: Number(result?.totalViews || 0),
-                totalFollowers: Number(result?.totalFollowers || 0),
-                totalInteractions: Number(result?.totalInteractions || 0),
-                estimatedRevenue: 0, //暂无收入数据
-                viewsChange: 15.2, // 模拟
-                followersChange: 8.5,
-                interactionsChange: 23.1,
-                revenueChange: 0,
-            },
+            data: stats
         });
     } catch (error: any) {
         return c.json({ success: false, error: error.message }, 500);

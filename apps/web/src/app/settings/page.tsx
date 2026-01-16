@@ -14,9 +14,9 @@ import { api } from "@/lib/api"
 import { toast } from "sonner"
 
 const platformsData = [
-    { id: "douyin", name: "抖音", icon: "🎵", connected: true, followers: "12.5K", color: "bg-black" },
-    { id: "xiaohongshu", name: "小红书", icon: "📕", connected: true, followers: "8.2K", color: "bg-red-500" },
-    { id: "bilibili", name: "B站", icon: "📺", connected: true, followers: "5.6K", color: "bg-blue-400" },
+    { id: "douyin", name: "抖音", icon: "🎵", connected: false, followers: null, color: "bg-black" },
+    { id: "xiaohongshu", name: "小红书", icon: "📕", connected: false, followers: null, color: "bg-red-500" },
+    { id: "bilibili", name: "B站", icon: "📺", connected: false, followers: null, color: "bg-blue-400" },
     { id: "wechat", name: "微信公众号", icon: "💬", connected: false, followers: null, color: "bg-green-500" },
     { id: "youtube", name: "YouTube", icon: "▶️", connected: false, followers: null, color: "bg-red-600" },
     { id: "kuaishou", name: "快手", icon: "📹", connected: false, followers: null, color: "bg-orange-500" },
@@ -27,7 +27,7 @@ export default function SettingsPage() {
     const [loadingPlatform, setLoadingPlatform] = useState<string | null>(null);
 
     const handleConnect = async (platformId: string) => {
-        if (platformId !== 'wechat') {
+        if (['wechat', 'douyin', 'xiaohongshu', 'bilibili'].includes(platformId) === false) {
             toast.info('该平台连接功能正在开发中');
             return;
         }
@@ -49,7 +49,7 @@ export default function SettingsPage() {
 
     return (
         <DashboardLayout title="设置" breadcrumbs={[{ label: "设置" }]}>
-            <div className="space-y-6 max-w-4xl">
+            <div className="space-y-8 max-w-5xl mx-auto">
                 {/* 个人资料 */}
                 <Card>
                     <CardHeader>
@@ -105,7 +105,10 @@ export default function SettingsPage() {
                                     <p className="text-sm text-muted-foreground">升级到专业版解锁更多功能</p>
                                 </div>
                             </div>
-                            <Button className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg">
+                            <Button
+                                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg"
+                                onClick={() => toast.info("专业版升级即将开放")}
+                            >
                                 升级专业版
                             </Button>
                         </div>

@@ -59,7 +59,7 @@ export function DashboardLayout({
                     </div>
                 </header>
                 <main className="flex-1 overflow-auto">
-                    <div className="container py-6">
+                    <div className="container py-8 px-6 lg:px-8">
                         {children}
                     </div>
                 </main>

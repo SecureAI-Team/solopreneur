@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { api } from '@/lib/api';
+import { toast } from 'sonner';
 
-// 官方微信图标 SVG
+// ... (WeChatIcon remains same)
 const WeChatIcon = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
         <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.04-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.358-8.596-6.358zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229a8.94 8.94 0 0 0 2.473-.357.7.7 0 0 1 .588.08l1.56.909a.262.262 0 0 0 .137.044c.131 0 .237-.108.237-.241 0-.06-.023-.117-.038-.174l-.32-1.211a.483.483 0 0 1 .175-.543C23.157 18.697 24 17.177 24 15.466c0-3.221-2.93-5.845-6.562-6.608h-.5zM14.186 14.042c.526 0 .953.432.953.966s-.427.967-.953.967a.96.96 0 0 1-.953-.967c0-.534.427-.966.953-.966zm4.768 0c.526 0 .953.432.953.966s-.427.967-.953.967a.96.96 0 0 1-.953-.967c0-.534.427-.966.953-.966z" />
@@ -16,22 +19,35 @@ const WeChatIcon = ({ className }: { className?: string }) => (
 );
 
 export default function LoginPage() {
+    const router = useRouter();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [loginMethod, setLoginMethod] = useState<'email' | 'wechat'>('email');
+    const [formData, setFormData] = useState({ email: '', password: '' });
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setTimeout(() => {
+        try {
+            const res = await api.auth.login(formData);
+            if (res.success && res.data) {
+                localStorage.setItem('token', res.data.token);
+                localStorage.setItem('user', JSON.stringify(res.data.user)); // 简单的用户信息存储
+                toast.success('登录成功');
+                router.push('/dashboard');
+            } else {
+                toast.error(res.error || '登录失败，请检查邮箱和密码');
+            }
+        } catch (error) {
+            toast.error('登录出错，请稍后重试');
+        } finally {
             setIsLoading(false);
-            window.location.href = '/dashboard';
-        }, 1500);
+        }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 p-4">
-            {/* 背景装饰 */}
+            {/* ... (background remains same) */}
             <div className="absolute inset-0 overflow-hidden">
                 <div className="absolute -top-40 -right-40 size-80 bg-violet-200 dark:bg-violet-900 rounded-full blur-3xl opacity-30" />
                 <div className="absolute -bottom-40 -left-40 size-80 bg-indigo-200 dark:bg-indigo-900 rounded-full blur-3xl opacity-30" />
@@ -39,6 +55,7 @@ export default function LoginPage() {
 
             <Card className="w-full max-w-md relative z-10 shadow-2xl border-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur">
                 <CardHeader className="space-y-1 text-center pb-2">
+                    {/* ... (Header remains same) */}
                     <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
                         <ArrowLeft className="size-4" />
                         返回首页
@@ -57,8 +74,8 @@ export default function LoginPage() {
                     <div className="flex rounded-xl bg-muted p-1">
                         <button
                             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${loginMethod === 'email'
-                                    ? 'bg-white dark:bg-slate-800 shadow-sm text-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-white dark:bg-slate-800 shadow-sm text-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             onClick={() => setLoginMethod('email')}
                         >
@@ -66,8 +83,8 @@ export default function LoginPage() {
                         </button>
                         <button
                             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 ${loginMethod === 'wechat'
-                                    ? 'bg-white dark:bg-slate-800 shadow-sm text-foreground'
-                                    : 'text-muted-foreground hover:text-foreground'
+                                ? 'bg-white dark:bg-slate-800 shadow-sm text-foreground'
+                                : 'text-muted-foreground hover:text-foreground'
                                 }`}
                             onClick={() => setLoginMethod('wechat')}
                         >
@@ -86,6 +103,8 @@ export default function LoginPage() {
                                         placeholder="邮箱地址"
                                         className="pl-10 h-11 bg-muted/50"
                                         required
+                                        value={formData.email}
+                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     />
                                 </div>
                                 <div className="relative">
@@ -95,6 +114,8 @@ export default function LoginPage() {
                                         placeholder="密码"
                                         className="pl-10 pr-10 h-11 bg-muted/50"
                                         required
+                                        value={formData.password}
+                                        onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     />
                                     <button
                                         type="button"

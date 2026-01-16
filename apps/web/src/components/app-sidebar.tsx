@@ -1,3 +1,6 @@
+"use client"
+
+import * as React from "react"
 import {
   LayoutDashboard,
   FileText,
@@ -9,6 +12,8 @@ import {
   Users,
   Zap,
   FolderOpen,
+  LogOut,
+  User
 } from "lucide-react"
 
 import {
@@ -33,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 const mainNavItems = [
   {
@@ -71,7 +77,7 @@ const toolsNavItems = [
   {
     title: "互动管理",
     icon: MessageSquare,
-    href: "/interactions",
+    href: "/inbox",
   },
   {
     title: "粉丝画像",
@@ -86,6 +92,29 @@ const toolsNavItems = [
 ]
 
 export function AppSidebar() {
+  const router = useRouter();
+  const [user, setUser] = React.useState<{ name: string; avatar?: string; email?: string } | null>(null);
+
+  React.useEffect(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      } else {
+        // Fallback default
+        setUser({ name: '创作者', email: 'creator@solomedia.com' });
+      }
+    } catch (e) {
+      console.error('Failed to parse user data', e);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    router.push('/login');
+  };
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
@@ -154,14 +183,14 @@ export function AppSidebar() {
                   className="data-[state=open]:bg-sidebar-accent"
                 >
                   <Avatar className="size-8">
-                    <AvatarImage src="/avatar.png" alt="用户头像" />
+                    <AvatarImage src={user?.avatar || "/avatar.png"} alt={user?.name} />
                     <AvatarFallback className="bg-gradient-to-br from-violet-500 to-indigo-500 text-white text-sm">
-                      U
+                      {user?.name?.[0]?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-0.5 leading-none text-left">
-                    <span className="font-medium">创作者</span>
-                    <span className="text-xs text-muted-foreground">免费版</span>
+                    <span className="font-medium truncate max-w-[150px]">{user?.name || 'Loading...'}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[150px]">{user?.email || '免费版'}</span>
                   </div>
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -170,15 +199,37 @@ export function AppSidebar() {
                 align="start"
                 className="w-56"
               >
+                <div className="flex items-center gap-2 p-2">
+                  <Avatar className="size-8">
+                    <AvatarImage src={user?.avatar || "/avatar.png"} />
+                    <AvatarFallback>{user?.name?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{user?.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">
+                    <User className="mr-2 size-4" />
+                    个人资料
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/settings">
                     <Settings className="mr-2 size-4" />
                     设置
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem>
+                  <Zap className="mr-2 size-4 text-amber-500" />
                   升级到专业版
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500 focus:bg-red-50 dark:focus:bg-red-950/20">
+                  <LogOut className="mr-2 size-4" />
+                  退出登录
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

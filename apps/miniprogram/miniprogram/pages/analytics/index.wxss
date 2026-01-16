@@ -1,0 +1,133 @@
+/* pages/analytics/index.wxss */
+.container {
+  padding: 30rpx;
+  background-color: #f7f8fa;
+  min-height: 100vh;
+}
+
+.page-header {
+  margin-bottom: 40rpx;
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+  display: block;
+}
+
+.subtitle {
+  font-size: 26rpx;
+  color: #999;
+  margin-top: 8rpx;
+  display: block;
+}
+
+.grid {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40rpx;
+}
+
+.card {
+  width: 31%;
+  background: #fff;
+  padding: 30rpx 20rpx;
+  border-radius: 16rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(0,0,0,0.02);
+}
+
+.card-label {
+  font-size: 24rpx;
+  color: #999;
+  margin-bottom: 12rpx;
+}
+
+.card-value {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.card-change {
+  font-size: 20rpx;
+}
+
+.positive {
+  color: #52c41a;
+}
+
+.negative {
+  color: #ff4d4f;
+}
+
+.section {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+}
+
+.section-header {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 30rpx;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.rank {
+  width: 50rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #999;
+  text-align: center;
+  margin-right: 20rpx;
+}
+
+.rank.top {
+  color: #ffb800;
+  font-weight: 600;
+}
+
+.info {
+  flex: 1;
+}
+
+.content-title {
+  font-size: 28rpx;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 400rpx;
+}
+
+.content-meta {
+  font-size: 22rpx;
+  color: #999;
+}
+
+.score {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #7c3aed;
+}
+
+.empty-state {
+  text-align: center;
+  color: #999;
+  padding: 40rpx 0;
+}

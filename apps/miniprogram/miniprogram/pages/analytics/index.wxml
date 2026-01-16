@@ -1,0 +1,61 @@
+<!--pages/analytics/index.wxml-->
+<wxs module="utils">
+var formatNumber = function(n) {
+  if (!n) return 0;
+  if (n >= 10000) {
+    return (n / 10000).toFixed(1) + '万';
+  }
+  return n;
+}
+module.exports = {
+  formatNumber: formatNumber
+}
+</wxs>
+
+<view class="container">
+  <view class="page-header">
+    <text class="title">数据概览</text>
+    <text class="subtitle">过去7天数据</text>
+  </view>
+
+  <!-- Overview Cards -->
+  <view class="grid">
+    <view class="card">
+      <view class="card-label">总播放量</view>
+      <view class="card-value">{{utils.formatNumber(overview.totalViews || 0)}}</view>
+      <view class="card-change {{overview.viewsChange >= 0 ? 'positive' : 'negative'}}">
+         {{overview.viewsChange >= 0 ? '↑' : '↓'}} {{overview.viewsChange}}%
+      </view>
+    </view>
+    <view class="card">
+      <view class="card-label">总点赞</view>
+      <view class="card-value">{{utils.formatNumber(overview.totalLikes || 0)}}</view>
+      <view class="card-change {{overview.likesChange >= 0 ? 'positive' : 'negative'}}">
+         {{overview.likesChange >= 0 ? '↑' : '↓'}} {{overview.likesChange}}%
+      </view>
+    </view>
+    <view class="card">
+      <view class="card-label">总评论</view>
+      <view class="card-value">{{utils.formatNumber(overview.totalComments || 0)}}</view>
+      <view class="card-change {{overview.commentsChange >= 0 ? 'positive' : 'negative'}}">
+         {{overview.commentsChange >= 0 ? '↑' : '↓'}} {{overview.commentsChange}}%
+      </view>
+    </view>
+  </view>
+
+  <!-- Top Content -->
+  <view class="section">
+    <view class="section-header">热门内容</view>
+    <view class="top-list" wx:if="{{topContent.length > 0}}">
+      <view class="list-item" wx:for="{{topContent}}" wx:key="id">
+        <view class="rank {{index < 3 ? 'top' : ''}}">{{index + 1}}</view>
+        <view class="info">
+          <text class="content-title">{{item.title}}</text>
+          <text class="content-meta">{{item.platform}} · {{utils.formatNumber(item.views)}}阅读</text>
+        </view>
+        <view class="score">{{item.score || 0}}</view>
+      </view>
+    </view>
+    <view wx:else class="empty-state">暂无数据</view>
+  </view>
+</view>

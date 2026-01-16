@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 COPY packages/database/package.json ./packages/database/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/ai/package.json ./packages/ai/
 COPY apps/api/package.json ./apps/api/
 RUN corepack enable pnpm && pnpm install --frozen-lockfile
 
@@ -20,6 +21,9 @@ WORKDIR /app/packages/shared
 RUN npm run build
 
 WORKDIR /app/packages/database
+RUN npm run build
+
+WORKDIR /app/packages/ai
 RUN npm run build
 
 # 构建API
@@ -40,6 +44,7 @@ COPY --from=builder --chown=hono:nodejs /app/apps/api/dist ./dist
 COPY --from=builder --chown=hono:nodejs /app/apps/api/package.json ./
 COPY --from=builder --chown=hono:nodejs /app/packages/shared/dist ./node_modules/@solomedia/shared/dist
 COPY --from=builder --chown=hono:nodejs /app/packages/database/dist ./node_modules/@solomedia/database/dist
+COPY --from=builder --chown=hono:nodejs /app/packages/ai/dist ./node_modules/@solomedia/ai/dist
 
 # 安装生产依赖
 RUN corepack enable pnpm && pnpm install --prod

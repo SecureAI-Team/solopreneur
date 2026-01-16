@@ -14,13 +14,16 @@
         "@solomedia/ai": "workspace:*",
         "@solomedia/database": "workspace:*",
         "@solomedia/shared": "workspace:*",
-        "hono": "^4.7.5",
-        "bcryptjs": "^2.4.3",
-        "jose": "^6.0.11",
-        "zod": "^3.24.5",
         "ali-oss": "^6.21.0",
+        "bcryptjs": "^2.4.3",
+        "better-sqlite3": "^12.6.0",
         "bullmq": "^5.30.0",
-        "ioredis": "^5.4.0"
+        "dotenv": "^17.2.3",
+        "drizzle-orm": "^0.43.1",
+        "hono": "^4.7.5",
+        "ioredis": "^5.4.0",
+        "jose": "^6.0.11",
+        "zod": "^3.24.5"
     },
     "devDependencies": {
         "@types/bcryptjs": "^2.4.6",

@@ -199,8 +199,8 @@ export default function LandingPage() {
                             <div
                                 key={i}
                                 className={`p-8 rounded-2xl border ${plan.popular
-                                        ? 'border-violet-500 bg-gradient-to-b from-violet-50 to-indigo-50 dark:from-violet-950 dark:to-indigo-950 relative'
-                                        : 'bg-white dark:bg-slate-900'
+                                    ? 'border-violet-500 bg-gradient-to-b from-violet-50 to-indigo-50 dark:from-violet-950 dark:to-indigo-950 relative'
+                                    : 'bg-white dark:bg-slate-900'
                                     }`}
                             >
                                 {plan.popular && (
@@ -229,6 +229,47 @@ export default function LandingPage() {
                                 >
                                     {plan.cta}
                                 </Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* 常见问题 */}
+            <section id="faq" className="py-20 px-4 bg-slate-50 dark:bg-slate-800/50">
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">常见问题</h2>
+                        <p className="text-lg text-muted-foreground">了解更多关于 SoloMedia 的信息</p>
+                    </div>
+
+                    <div className="grid gap-6">
+                        {[
+                            {
+                                q: "支持哪些媒体平台？",
+                                a: "目前我们支持抖音、小红书、B站、微信公众号等主流平台。未来还将支持快手、微博等更多渠道。"
+                            },
+                            {
+                                q: "免费版有功能限制吗？",
+                                a: "免费版支持绑定1个平台账号，可以使用基础的AI创作和数据查看功能。对于刚起步的创作者完全够用。"
+                            },
+                            {
+                                q: "如何保证账号安全？",
+                                a: "我们使用官方开放平台接口或安全的RPA技术，所有敏感数据（如Token）均经过企业级加密存储，绝不泄露。"
+                            },
+                            {
+                                q: "可以在手机上使用吗？",
+                                a: "当然可以！我们的网页端完全适配移动设备，同时微信小程序版本也即将上线，方便您随时随地管理内容。"
+                            }
+                        ].map((item, i) => (
+                            <div key={i} className="bg-white dark:bg-slate-900 p-6 rounded-xl border shadow-sm hover:shadow-md transition-shadow">
+                                <h3 className="text-lg font-semibold mb-2 flex items-start gap-2">
+                                    <span className="text-violet-600 font-bold">Q.</span>
+                                    {item.q}
+                                </h3>
+                                <p className="text-muted-foreground ml-6 leading-relaxed">
+                                    {item.a}
+                                </p>
                             </div>
                         ))}
                     </div>
