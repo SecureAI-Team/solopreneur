@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import {
-    generateTopics,
     generateOutline,
     optimizeTitles,
     assistantChat,
     generateInsights,
+    generateNicheAnalysis,
+    generateContentDNA,
     type ChatMessage
 } from '@solomedia/ai';
 import { db, aiConversations } from '../db';
@@ -217,5 +218,58 @@ aiRoutes.get('/insights', async (c) => {
                 },
             ],
         });
+    }
+});
+// AI赛道雷达
+aiRoutes.post('/niche-analysis', async (c) => {
+    try {
+        const body = await c.req.json();
+        const { interests, skills, timeAvailable } = body;
+
+        if (!interests || !skills) {
+            return c.json({ success: false, error: '请提供兴趣和技能' }, 400);
+        }
+
+        const result = await generateNicheAnalysis({
+            interests,
+            skills,
+            timeAvailable
+        });
+
+        return c.json({
+            success: true,
+            data: result
+        });
+    } catch (error: any) {
+        console.error('赛道分析失败:', error);
+        return c.json({
+            success: false,
+            error: error.message || '分析失败'
+        }, 500);
+    }
+});
+
+// AI内容DNA
+aiRoutes.post('/content-dna', async (c) => {
+    try {
+        const body = await c.req.json();
+        const { niche } = body;
+
+        if (!niche) {
+            return c.json({ success: false, error: '请提供赛道' }, 400);
+        }
+
+        const result = await generateContentDNA({ niche });
+
+        return c.json({
+            success: true,
+            data: result
+        });
+    } catch (error: any) {
+        console.error('DNA生成失败:', error);
+        return c.json({
+            success: false,
+            error: error.message || '生成失败'
+        }, 500);
     }
 });

@@ -352,4 +352,102 @@ export async function generateInsights(data: {
     return [];
 }
 
-export { ChatMessage, ChatOptions };
+/**
+ * AI赛道雷达 - 智能分析
+ */
+export async function generateNicheAnalysis(params: {
+    interests: string[];
+    skills: string[];
+    timeAvailable?: string;
+}): Promise<{
+    niche: string;
+    difficulty: number; // 0-100
+    potential: number; // 0-100
+    reason: string;
+}[]> {
+    const systemPrompt = `你是自媒体赛道分析专家。基于用户兴趣和技能，推荐3个高潜力赛道。
+分析维度：
+1. 市场需求（热度）
+2. 竞争程度（蓝海/红海）
+3. 变现路径
+
+返回JSON数组：
+[
+  {
+    "niche": "赛道名称",
+    "difficulty": 60,
+    "potential": 85,
+    "reason": "推荐理由，包含变现方式"
+  }
+]`;
+
+    const userPrompt = `用户情况：
+兴趣：${params.interests.join(', ')}
+技能：${params.skills.join(', ')}
+${params.timeAvailable ? `可用时间：${params.timeAvailable}` : ''}
+
+请推荐3个适合新手的赛道。`;
+
+    const result = await chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+    ], { quality: 'high', temperature: 0.8 });
+
+    try {
+        const jsonMatch = result.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+    } catch { }
+
+    // Fallback
+    return [
+        {
+            niche: "生活Vlog",
+            difficulty: 30,
+            potential: 70,
+            reason: "门槛低，适合新手起步，容易积累粉丝，变现靠广告"
+        }
+    ];
+}
+
+/**
+ * AI内容DNA - 账号定位
+ */
+export async function generateContentDNA(params: {
+    niche: string;
+}): Promise<{
+    persona: string;
+    visualStyle: string;
+    voice: string;
+    bio: string;
+}> {
+    const systemPrompt = `你是品牌定位专家。为自媒体账号生成"内容DNA"。
+返回JSON对象：
+{
+  "persona": "人设标签（如：省钱达人/硬核极客）",
+  "visualStyle": "视觉风格（如：高饱和度/极简冷淡）",
+  "voice": "语言风格（如：犀利吐槽/温柔治愈）",
+  "bio": "一句话简介（吸引关注）"
+}`;
+
+    const result = await chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `赛道：${params.niche}` },
+    ], { quality: 'medium' });
+
+    try {
+        const jsonMatch = result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+    } catch { }
+
+    return {
+        persona: "内容创作者",
+        visualStyle: "清晰明亮",
+        voice: "真诚分享",
+        bio: "分享有价值的内容"
+    };
+}
+

@@ -72,7 +72,19 @@ Page({
     },
 
     goToAI() {
-        wx.showToast({ title: 'AI助手即将上线', icon: 'none' });
+        wx.showActionSheet({
+            itemList: ['AI 赛道雷达', 'AI 内容 DNA'],
+            success(res) {
+                if (res.tapIndex === 0) {
+                    wx.navigateTo({ url: '/pages/ai/niche/niche' });
+                } else if (res.tapIndex === 1) {
+                    wx.navigateTo({ url: '/pages/ai/dna/dna' });
+                }
+            },
+            fail(res) {
+                console.log(res.errMsg);
+            }
+        })
     },
 
     goToDetail(e: any) {

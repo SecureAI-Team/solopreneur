@@ -112,6 +112,14 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        generateNicheAnalysis: (data: { interests: string[]; skills: string[]; timeAvailable?: string }) => fetcher<any>('/ai/niche-analysis', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        generateContentDNA: (data: { niche: string }) => fetcher<any>('/ai/content-dna', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
     },
     analytics: {
         getOverview: () => fetcher<any>('/analytics/dashboard'),

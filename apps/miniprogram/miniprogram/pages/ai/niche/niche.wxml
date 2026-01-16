@@ -1,0 +1,66 @@
+<view class="container">
+  <view class="header">
+    <view class="title">AI 赛道雷达</view>
+    <view class="subtitle">基于你的兴趣与技能，分析高潜力赛道</view>
+  </view>
+
+  <block wx:if="{{step === 1}}">
+    <view class="section">
+      <view class="section-title">你的兴趣 (多选)</view>
+      <view class="tags">
+        <view 
+          wx:for="{{interestsList}}" 
+          wx:key="item"
+          class="tag {{utils.includes(selectedInterests, item) ? 'active' : ''}}"
+          bindtap="toggleInterest"
+          data-item="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+      <input class="custom-input" placeholder="输入其他兴趣..." model:value="{{customInterest}}" />
+    </view>
+
+    <view class="section">
+      <view class="section-title">你的技能 (多选)</view>
+      <view class="tags">
+        <view 
+          wx:for="{{skillsList}}" 
+          wx:key="item"
+          class="tag {{utils.includes(selectedSkills, item) ? 'active' : ''}}"
+          bindtap="toggleSkill"
+          data-item="{{item}}"
+        >
+          {{item}}
+        </view>
+      </view>
+    </view>
+
+    <button class="btn-primary" bindtap="analyze" loading="{{loading}}" disabled="{{selectedInterests.length === 0 && !customInterest}}">开始分析</button>
+  </block>
+
+  <block wx:if="{{step === 2}}">
+    <view class="results">
+      <view class="result-card" wx:for="{{results}}" wx:key="niche">
+        <view class="card-header">
+          <text class="card-title">{{item.niche}}</text>
+          <view class="badges">
+            <text class="badge badge-yellow">难度 {{item.difficulty}}</text>
+            <text class="badge badge-green">潜力 {{item.potential}}</text>
+          </view>
+        </view>
+        <view class="card-content">
+          {{item.reason}}
+        </view>
+        <button class="btn-outline" size="mini" bindtap="selectNiche" data-niche="{{item.niche}}">选择此赛道</button>
+      </view>
+    </view>
+    <button class="btn-text" bindtap="reset">重新分析</button>
+  </block>
+</view>
+
+<wxs module="utils">
+module.exports.includes = function(arr, item) {
+  return arr.indexOf(item) > -1;
+}
+</wxs>

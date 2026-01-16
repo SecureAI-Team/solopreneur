@@ -1,0 +1,40 @@
+<view class="container">
+  <view class="header" wx:if="{{!result}}">
+    <view class="title">AI 内容 DNA</view>
+    <view class="subtitle">一键生成人设、风格、简介，告别同质化</view>
+  </view>
+
+  <block wx:if="{{!result}}">
+    <view class="section">
+      <view class="section-title">你的赛道</view>
+      <input class="input-lg" placeholder="例如：省钱美食、职场英语" model:value="{{niche}}" />
+      <button class="btn-primary" bindtap="generate" loading="{{loading}}" disabled="{{!niche}}">生成 DNA</button>
+    </view>
+  </block>
+
+  <block wx:if="{{result}}">
+    <view class="result-container">
+      <view class="dna-card violet">
+        <view class="card-label">👤 人设标签</view>
+        <view class="card-value">{{result.persona}}</view>
+      </view>
+
+      <view class="dna-card blue">
+        <view class="card-label">🎨 视觉风格</view>
+        <view class="card-value">{{result.visualStyle}}</view>
+      </view>
+
+      <view class="dna-card pink">
+        <view class="card-label">🎙️ 语言风格</view>
+        <view class="card-value">{{result.voice}}</view>
+      </view>
+
+      <view class="bio-card">
+        <view class="bio-label">BIO / 简介</view>
+        <view class="bio-text">{{result.bio}}</view>
+      </view>
+
+      <button class="btn-outline" bindtap="reset" style="margin-top: 40rpx;">重新生成</button>
+    </view>
+  </block>
+</view>

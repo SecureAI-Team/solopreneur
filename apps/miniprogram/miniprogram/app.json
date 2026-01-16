@@ -4,7 +4,9 @@
         "pages/content/index",
         "pages/publish/index",
         "pages/analytics/index",
-        "pages/profile/index"
+        "pages/profile/index",
+        "pages/ai/niche/niche",
+        "pages/ai/dna/dna"
     ],
     "window": {
         "navigationBarBackgroundColor": "#7c3aed",

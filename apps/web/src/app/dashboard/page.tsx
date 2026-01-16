@@ -86,21 +86,21 @@ export default function HomePage() {
                 value={data.totalViews > 10000 ? (data.totalViews / 10000).toFixed(1) + '万' : data.totalViews.toLocaleString()}
                 change={15.2} // 暂无环比数据，保留 Mock
                 icon={<Eye className="size-4" />}
-                description="较上周"
+                changeLabel="较上周"
               />
               <StatCard
                 title="总粉丝数"
                 value={data.totalFans > 10000 ? (data.totalFans / 10000).toFixed(1) + '万' : data.totalFans.toLocaleString()}
                 change={8.5}
                 icon={<Users className="size-4" />}
-                description="较上周"
+                changeLabel="较上周"
               />
               <StatCard
                 title="平均互动率"
                 value={data.totalEngagement + '%'}
                 change={23.1}
                 icon={<Heart className="size-4" />}
-                description="较上周"
+                changeLabel="较上周"
               />
               <StatCard
                 title="预估收入"
@@ -108,7 +108,7 @@ export default function HomePage() {
                 change={-2.3}
                 changeLabel="较上周"
                 icon={<Wallet className="size-4" />}
-                description="较上周"
+
               />
             </div>
 
