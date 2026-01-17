@@ -161,6 +161,94 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* 新手起步教练 */}
+            <section className="py-20 px-4 bg-gradient-to-br from-indigo-900 to-violet-900 text-white overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-white/5 skew-x-12 blur-3xl" />
+                <div className="max-w-7xl mx-auto relative z-10">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-violet-200 text-sm mb-6 border border-white/20">
+                                <Star className="size-4 text-amber-400" />
+                                专注「从0到1」起步困难
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-bold mb-6">
+                                没有方向？让 AI 教练带你起飞
+                            </h2>
+                            <p className="text-lg text-violet-100 mb-8 leading-relaxed">
+                                不知道发什么？不懂排版？没人看？SoloMedia 特有的「新手教练」模式，
+                                通过独家 <strong>Content DNA</strong> 技术，帮你找到最适合你的赛道。
+                            </p>
+
+                            <div className="space-y-6">
+                                <div className="flex gap-4">
+                                    <div className="size-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                                        <TrendingUp className="size-6 text-emerald-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold mb-1">Niche 赛道分析</h3>
+                                        <p className="text-violet-200">AI分析你的兴趣与优势，推荐蓝海赛道</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="size-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                                        <Sparkles className="size-6 text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold mb-1">Content DNA 定制</h3>
+                                        <p className="text-violet-200">打造你独一无二的内容风格与人设</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="size-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                                        <CheckCircle className="size-6 text-blue-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-bold mb-1">保姆级起号指南</h3>
+                                        <p className="text-violet-200">每日任务清单，手把手教你度过冷启动期</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-10">
+                                <Link href="/onboarding">
+                                    <Button size="lg" className="bg-white text-indigo-900 hover:bg-violet-50 h-12 px-8 font-semibold">
+                                        开始我的起号之旅
+                                        <ArrowRight className="ml-2 size-5" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <div className="rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 p-6 shadow-2xl skew-y-3 hover:skew-y-0 transition-all duration-700">
+                                {/* Mock UI Card */}
+                                <div className="flex items-center gap-3 mb-6">
+                                    <div className="size-10 rounded-full bg-gradient-to-tr from-amber-400 to-orange-500" />
+                                    <div>
+                                        <div className="h-4 w-32 bg-white/20 rounded mb-2" />
+                                        <div className="h-3 w-20 bg-white/10 rounded" />
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="h-4 w-full bg-white/10 rounded" />
+                                    <div className="h-4 w-5/6 bg-white/10 rounded" />
+                                    <div className="h-4 w-4/6 bg-white/10 rounded" />
+                                </div>
+                                <div className="mt-6 p-4 rounded-xl bg-indigo-950/50 border border-white/10">
+                                    <div className="flex items-center gap-2 text-emerald-400 text-sm font-semibold mb-2">
+                                        <Sparkles className="size-4" />
+                                        AI 教练建议
+                                    </div>
+                                    <p className="text-sm text-violet-200">
+                                        你的账号风格偏向「治愈系」，建议尝试 "下班后的独处时间" 话题，
+                                        并在封面使用暖色调。已为你生成 3 个备选标题...
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* 定价 */}
             <section id="pricing" className="py-20 px-4">
                 <div className="max-w-5xl mx-auto">

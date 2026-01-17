@@ -8,6 +8,23 @@ export interface ApiResponse<T = unknown> {
     message?: string;
 }
 
+// 用户配置类型
+export interface UserProfile {
+    niche?: string;           // 选择的赛道
+    interests?: string[];     // 兴趣领域
+    skills?: string[];        // 技能
+    audience?: string;        // 目标受众
+    style?: string;           // 内容风格
+    contentDNA?: {            // AI生成的 Content DNA
+        persona?: string;
+        visualStyle?: string;
+        voice?: string;
+        bio?: string;
+    };
+    onboardingCompleted?: boolean;
+    updatedAt?: Date;
+}
+
 // 用户相关类型
 export interface User {
     id: string;
@@ -16,6 +33,7 @@ export interface User {
     nickname?: string;
     avatar?: string;
     plan: 'free' | 'pro' | 'enterprise';
+    profile?: UserProfile;    // 用户个性化配置
     createdAt: Date;
 }
 
@@ -79,9 +97,17 @@ export const createContentSchema = z.object({
     scheduledAt: z.string().datetime().optional(),
 });
 
+export const updateContentSchema = createContentSchema.partial();
+
 export const wxLoginSchema = z.object({
     code: z.string(), // 微信小程序登录code
 });
+
+export type LoginInput = z.infer<typeof loginSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type CreateContentInput = z.infer<typeof createContentSchema>;
+export type UpdateContentInput = z.infer<typeof updateContentSchema>;
+export type WxLoginInput = z.infer<typeof wxLoginSchema>;
 
 // 常量
 export const PLATFORMS = [

@@ -7,34 +7,73 @@ import { PlatformStats } from "@/components/dashboard/platform-stats"
 import { AIRecommendations } from "@/components/dashboard/ai-recommendations"
 import { RecentContent } from "@/components/dashboard/recent-content"
 import { QuickActions } from "@/components/dashboard/quick-actions"
-import { Eye, Users, Heart, Wallet, Loader2 } from "lucide-react"
+import { Eye, Users, Heart, Wallet, Loader2, RefreshCw } from "lucide-react"
 import { api } from "@/lib/api"
 import { toast } from "sonner"
 import { OnboardingGuide } from "@/components/dashboard/onboarding-guide"
+import { Button } from "@/components/ui/button"
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      const res = await api.analytics.getOverview();
+      if (res.success) {
+        setStats(res.data);
+      } else {
+        console.error("Failed to fetch stats:", res.error);
+      }
+    } catch (error) {
+      console.error("Stats error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await api.analytics.getOverview();
-        if (res.success) {
-          setStats(res.data);
-        } else {
-          // 暂时静默失败，或者显示默认 Mock 数据
-          console.error("Failed to fetch stats:", res.error);
-        }
-      } catch (error) {
-        console.error("Stats error:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    toast.loading("正在同步全平台数据...", { id: 'sync-toast' });
+
+    // Broadcast sync event to extension
+    window.postMessage({ type: 'SOLOMEDIA_SYNC_START' }, '*');
+
+    // Wait for completion (Listen for window message)
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'SOLOMEDIA_SYNC_COMPLETE') {
+        toast.success("✅ 数据同步完成", { id: 'sync-toast' });
+        setIsSyncing(false);
+        fetchData(); // Reload stats
+        window.removeEventListener('message', handleMessage);
+      } else if (event.data.type === 'SOLOMEDIA_SYNC_ERROR') {
+        toast.error("同步失败: " + (event.data.payload?.error || "未知错误"), { id: 'sync-toast' });
+        setIsSyncing(false);
+        window.removeEventListener('message', handleMessage);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+
+    // Timeout fallback (5s for demo / 30s real)
+    setTimeout(() => {
+      if (isSyncing) {
+        // Mock success in dev mode if no extension
+        if (process.env.NODE_ENV === 'development') {
+          console.log("Mocking sync success...");
+          window.postMessage({ type: 'SOLOMEDIA_SYNC_COMPLETE' }, '*');
+        } else {
+          toast.dismiss('sync-toast');
+          // Don't error, just stop spinning. Maybe extension is silent.
+          setIsSyncing(false);
+        }
+      }
+    }, 5000);
+  };
 
   const defaultStats = {
     totalViews: 0,
@@ -79,7 +118,21 @@ export default function HomePage() {
               }}
             />
 
-            {/* 核心指标 */}
+            {/* 核心指标 & Sync Button */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold tracking-tight">数据概览</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                {isSyncing ? '同步中...' : '同步最新数据'}
+              </Button>
+            </div>
+
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
               <StatCard
                 title="总播放量"
@@ -98,14 +151,14 @@ export default function HomePage() {
               <StatCard
                 title="平均互动率"
                 value={data.totalEngagement + '%'}
-                change={23.1}
+                change={0}
                 icon={<Heart className="size-4" />}
                 changeLabel="较上周"
               />
               <StatCard
                 title="预估收入"
                 value={'¥' + data.estimatedIncome.toLocaleString()}
-                change={-2.3}
+                change={0}
                 changeLabel="较上周"
                 icon={<Wallet className="size-4" />}
 

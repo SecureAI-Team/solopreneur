@@ -24,6 +24,17 @@ const folders = [
     { name: '品牌资源', count: 8, icon: '✨', color: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
 ];
 
+interface MediaItem {
+    id: number;
+    name: string;
+    originalName: string;
+    type: string;
+    size: string;
+    date: string;
+    url: string;
+    tags: string[];
+}
+
 function getFileIcon(type: string) {
     switch (type) {
         case 'image': return <ImageIcon className="size-8 text-blue-500" />;
@@ -49,7 +60,7 @@ export default function MediaLibraryPage() {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [items, setItems] = useState<any[]>([]);
+    const [items, setItems] = useState<MediaItem[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activeTab, setActiveTab] = useState('all');
     const [previewItem, setPreviewItem] = useState<any | null>(null);
@@ -411,7 +422,7 @@ export default function MediaLibraryPage() {
                                                         <div className="min-w-0 text-left">
                                                             <p className="font-medium truncate">{item.name}</p>
                                                             <div className="flex gap-2">
-                                                                {item.tags.map(tag => (
+                                                                {item.tags?.map(tag => (
                                                                     <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-500">
                                                                         {tag}
                                                                     </span>

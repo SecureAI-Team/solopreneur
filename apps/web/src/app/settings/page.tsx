@@ -6,46 +6,28 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
-    Bell, Palette, Key, Link2, Shield, User, Mail,
-    Camera, Crown, ChevronRight, Moon, Sun, Check, Loader2
+    Bell, Palette, Link2, Shield, User, Mail,
+    Camera, Crown, ChevronRight, Moon, Sun, ExternalLink, Copy
 } from "lucide-react"
-import { useState } from "react"
 import { useTheme } from "next-themes"
-import { api } from "@/lib/api"
 import { toast } from "sonner"
+import Link from "next/link"
 
-const platformsData = [
-    { id: "douyin", name: "抖音", icon: "🎵", connected: false, followers: null, color: "bg-black" },
-    { id: "xiaohongshu", name: "小红书", icon: "📕", connected: false, followers: null, color: "bg-red-500" },
-    { id: "bilibili", name: "B站", icon: "📺", connected: false, followers: null, color: "bg-blue-400" },
-    { id: "wechat", name: "微信公众号", icon: "💬", connected: false, followers: null, color: "bg-green-500" },
-    { id: "youtube", name: "YouTube", icon: "▶️", connected: false, followers: null, color: "bg-red-600" },
-    { id: "kuaishou", name: "快手", icon: "📹", connected: false, followers: null, color: "bg-orange-500" },
+const supportedPlatforms = [
+    { id: "douyin", name: "抖音", icon: "🎵", color: "bg-black", webUrl: "https://www.douyin.com", creatorUrl: "https://creator.douyin.com" },
+    { id: "xiaohongshu", name: "小红书", icon: "📕", color: "bg-red-500", webUrl: "https://www.xiaohongshu.com", creatorUrl: "https://creator.xiaohongshu.com" },
+    { id: "bilibili", name: "B站", icon: "📺", color: "bg-blue-400", webUrl: "https://www.bilibili.com", creatorUrl: "https://member.bilibili.com" },
+    { id: "wechat", name: "微信公众号", icon: "💬", color: "bg-green-500", webUrl: null, creatorUrl: "https://mp.weixin.qq.com" },
+    { id: "toutiao", name: "头条号", icon: "📰", color: "bg-red-600", webUrl: null, creatorUrl: "https://mp.toutiao.com" },
+    { id: "zhihu", name: "知乎", icon: "🔵", color: "bg-blue-600", webUrl: "https://www.zhihu.com", creatorUrl: "https://www.zhihu.com/creator" },
+    { id: "kuaishou", name: "快手", icon: "📹", color: "bg-orange-500", webUrl: "https://www.kuaishou.com", creatorUrl: "https://cp.kuaishou.com" },
 ]
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
-    const [loadingPlatform, setLoadingPlatform] = useState<string | null>(null);
 
-    const handleConnect = async (platformId: string) => {
-        if (['wechat', 'douyin', 'xiaohongshu', 'bilibili'].includes(platformId) === false) {
-            toast.info('该平台连接功能正在开发中');
-            return;
-        }
-
-        setLoadingPlatform(platformId);
-        try {
-            const res = await api.platforms.getAuthUrl(platformId);
-            if (res.success && res.data) {
-                window.location.href = res.data.url;
-            } else {
-                toast.error(res.error || '获取授权链接失败');
-            }
-        } catch (error) {
-            toast.error('连接出错，请稍后重试');
-        } finally {
-            setLoadingPlatform(null);
-        }
+    const openCreatorCenter = (url: string) => {
+        window.open(url, '_blank');
     };
 
     return (
@@ -116,29 +98,26 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                {/* 平台连接 */}
+                {/* 支持的平台 */}
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Link2 className="size-5" />
                                 <div>
-                                    <CardTitle>平台连接</CardTitle>
-                                    <CardDescription>管理你的社交媒体账号</CardDescription>
+                                    <CardTitle>支持的平台</CardTitle>
+                                    <CardDescription>在SoloMedia创作内容，一键复制发布到各平台</CardDescription>
                                 </div>
                             </div>
-                            <Badge variant="outline">已连接 3/6</Badge>
+                            <Badge className="bg-violet-500">{supportedPlatforms.length} 个平台</Badge>
                         </div>
                     </CardHeader>
                     <CardContent>
                         <div className="grid gap-3 sm:grid-cols-2">
-                            {platformsData.map((platform) => (
+                            {supportedPlatforms.map((platform) => (
                                 <div
                                     key={platform.id}
-                                    className={`flex items-center justify-between p-4 rounded-xl border transition-all ${platform.connected
-                                        ? 'bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800'
-                                        : 'hover:bg-muted/50'
-                                        }`}
+                                    className="flex items-center justify-between p-4 rounded-xl border hover:bg-muted/50 transition-all"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className={`size-10 rounded-lg ${platform.color} flex items-center justify-center text-xl`}>
@@ -146,37 +125,25 @@ export default function SettingsPage() {
                                         </div>
                                         <div>
                                             <p className="font-medium">{platform.name}</p>
-                                            {platform.connected && platform.followers && (
-                                                <p className="text-sm text-muted-foreground">
-                                                    {platform.followers} 粉丝
-                                                </p>
-                                            )}
+                                            <p className="text-xs text-muted-foreground">创作者中心</p>
                                         </div>
                                     </div>
-                                    {platform.connected ? (
-                                        <div className="flex items-center gap-2">
-                                            <div className="size-6 rounded-full bg-emerald-500 flex items-center justify-center">
-                                                <Check className="size-4 text-white" />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="gap-1"
-                                            onClick={() => handleConnect(platform.id)}
-                                            disabled={loadingPlatform === platform.id}
-                                        >
-                                            {loadingPlatform === platform.id ? (
-                                                <Loader2 className="size-4 animate-spin" />
-                                            ) : (
-                                                '连接'
-                                            )}
-                                            {!loadingPlatform && <ChevronRight className="size-4" />}
-                                        </Button>
-                                    )}
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-1"
+                                        onClick={() => openCreatorCenter(platform.creatorUrl)}
+                                    >
+                                        打开
+                                        <ExternalLink className="size-3" />
+                                    </Button>
                                 </div>
                             ))}
+                        </div>
+                        <div className="mt-4 p-4 rounded-lg bg-muted/50">
+                            <p className="text-sm text-muted-foreground">
+                                💡 <strong>使用方法</strong>：在「发布」页面创作内容后，选择目标平台，点击"复制内容"，然后在对应平台粘贴发布。
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
@@ -221,12 +188,15 @@ export default function SettingsPage() {
                 {/* 其他设置 */}
                 <div className="grid gap-4 sm:grid-cols-2">
                     {[
-                        { icon: Bell, title: "通知设置", description: "管理推送和提醒", color: "bg-blue-100 text-blue-600" },
-                        { icon: Key, title: "API密钥", description: "管理AI服务密钥", color: "bg-amber-100 text-amber-600" },
-                        { icon: Shield, title: "隐私安全", description: "账户安全设置", color: "bg-emerald-100 text-emerald-600" },
-                        { icon: Mail, title: "邮件偏好", description: "订阅和通知邮件", color: "bg-violet-100 text-violet-600" },
+                        { icon: Bell, title: "通知设置", description: "管理推送和提醒", color: "bg-blue-100 text-blue-600", href: undefined },
+                        { icon: Shield, title: "隐私安全", description: "账户安全设置", color: "bg-emerald-100 text-emerald-600", href: undefined },
+                        { icon: Mail, title: "邮件偏好", description: "订阅和通知邮件", color: "bg-violet-100 text-violet-600", href: undefined },
                     ].map((section) => (
-                        <Card key={section.title} className="cursor-pointer hover:shadow-lg transition-all group">
+                        <Card
+                            key={section.title}
+                            className="cursor-pointer hover:shadow-lg transition-all group"
+                            onClick={() => section.href && (window.location.href = section.href)}
+                        >
                             <CardContent className="pt-6">
                                 <div className="flex items-center gap-4">
                                     <div className={`size-12 rounded-xl ${section.color} flex items-center justify-center`}>

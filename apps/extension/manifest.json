@@ -1,0 +1,84 @@
+{
+    "manifest_version": 3,
+    "name": "SoloMedia Assistant",
+    "version": "0.1.0",
+    "description": "SoloMedia Cross-Platform Publishing Assistant",
+    "permissions": [
+        "storage",
+        "activeTab",
+        "scripting"
+    ],
+    "host_permissions": [
+        "http://localhost:3000/*",
+        "https://*.douyin.com/*",
+        "https://*.xiaohongshu.com/*",
+        "https://*.bilibili.com/*",
+        "https://mp.weixin.qq.com/*"
+    ],
+    "background": {
+        "service_worker": "src/background/index.ts",
+        "type": "module"
+    },
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/icon-16.png",
+            "48": "icons/icon-48.png",
+            "128": "icons/icon-128.png"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "http://localhost:3000/*"
+            ],
+            "js": [
+                "src/content/solomedia-bridge.ts"
+            ],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": [
+                "https://creator.douyin.com/*"
+            ],
+            "js": [
+                "src/content/douyin.ts"
+            ],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": [
+                "https://creator.xiaohongshu.com/*"
+            ],
+            "js": [
+                "src/content/xiaohongshu.ts"
+            ],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": [
+                "https://www.douyin.com/search/*",
+                "https://www.xiaohongshu.com/search_result*"
+            ],
+            "js": [
+                "src/content/research.ts"
+            ],
+            "run_at": "document_idle"
+        },
+        {
+            "matches": [
+                "https://creator.douyin.com/creator-micro/home",
+                "https://creator.xiaohongshu.com/*"
+            ],
+            "js": [
+                "src/content/analytics.ts"
+            ],
+            "run_at": "document_idle"
+        }
+    ],
+    "icons": {
+        "16": "icons/icon-16.png",
+        "48": "icons/icon-48.png",
+        "128": "icons/icon-128.png"
+    }
+}

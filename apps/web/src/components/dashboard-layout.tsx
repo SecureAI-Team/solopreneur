@@ -13,6 +13,8 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 
+import { ToolModeOnboarding } from "@/components/onboarding/tool-mode-guide"
+
 interface DashboardLayoutProps {
     children: React.ReactNode
     title?: string
@@ -26,6 +28,7 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
     return (
         <SidebarProvider>
+            <ToolModeOnboarding />
             <AppSidebar />
             <SidebarInset>
                 <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

@@ -28,24 +28,92 @@ analyticsRoutes.get('/dashboard', async (c) => {
     }
 });
 
-// 获取平台分布
+
+// 接收插件同步的后台统计数据
+analyticsRoutes.post('/sync', async (c) => {
+    try {
+        const authHeader = c.req.header('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) return c.json({ success: false, error: '未授权' }, 401);
+        const token = authHeader.slice(7);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
+        const userId = payload.userId as string;
+
+        const body = await c.req.json();
+        const { platform, stats } = body; // stats: { followers, likes, views, ... }
+
+        if (!platform || !stats) {
+            return c.json({ success: false, error: '缺少参数' }, 400);
+        }
+
+        // 记录到 syncedAnalytics 表
+        // @ts-ignore
+        await db.insert(syncedAnalytics).values({
+            userId,
+            platform,
+            followers: stats.followers || 0,
+            likes: stats.likes || 0,
+            views: stats.views || 0,
+            rawData: stats,
+            snapshotAt: new Date()
+        });
+
+        // 可选：同时也更新 analytics 表 (如果需要聚合历史趋势)
+        // 但目前 analytics 表关联的是发布记录，而插件抓取的可能是账号级别的总数。
+        // 所以暂时只存 snapshot。
+
+        return c.json({ success: true, message: '数据同步成功' });
+    } catch (error: any) {
+        return c.json({ success: false, error: error.message }, 500);
+    }
+});
+
+// 获取平台分布 (更新为读取 syncedAnalytics)
 analyticsRoutes.get('/platforms', async (c) => {
     try {
-        // 按平台分组统计
-        // 由于平台信息在platform_connections表，这里简化为直接按发布记录查询，实际需要join
-        // 暂时返回空或者模拟数据，直到关联查询完善
+        const authHeader = c.req.header('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) return c.json({ success: false, error: '未授权' }, 401);
+        const token = authHeader.slice(7);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
+        const userId = payload.userId as string;
+
+        // 获取每个平台最新的快照
+        // Drizzle 暂时没有简单的 DISTINCT ON 支持，这里用 query + logic 简化
+        // @ts-ignore
+        const allSnapshots = await db.select().from(syncedAnalytics)
+            .where(eq(syncedAnalytics.userId, userId))
+            .orderBy(desc(syncedAnalytics.snapshotAt));
+
+        // 分组取最新
+        const platformStats = new Map();
+        for (const s of allSnapshots) {
+            if (!platformStats.has(s.platform)) {
+                platformStats.set(s.platform, s);
+            }
+        }
+
+        const data = Array.from(platformStats.values()).map(s => ({
+            platform: s.platform,
+            name: s.platform, // 这里可以映射中文名
+            views: s.views,
+            followers: s.followers,
+            percentage: 0 // 需要在这里计算百分比
+        }));
+
+        // 计算百分比 (以播放量为例)
+        const totalViews = data.reduce((acc, cur) => acc + (cur.views || 0), 0);
+        data.forEach(d => {
+            d.percentage = totalViews > 0 ? Math.round((d.views / totalViews) * 100) : 0;
+        });
+
         return c.json({
             success: true,
-            data: [
-                { platform: 'douyin', name: '抖音', views: 0, percentage: 0, followers: 0 },
-                { platform: 'xiaohongshu', name: '小红书', views: 0, percentage: 0, followers: 0 },
-            ],
-            message: '平台数据统计需完善关联查询'
+            data
         });
     } catch (error: any) {
         return c.json({ success: false, error: error.message }, 500);
     }
 });
+
 
 // 获取热门内容
 analyticsRoutes.get('/top-content', async (c) => {

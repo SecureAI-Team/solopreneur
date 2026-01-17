@@ -3,14 +3,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-interface PlatformData {
-    name: string
-    icon: string
-    followers: number
-    views: number
-    engagement: number
-    connected: boolean
-}
+
 
 
 export interface PlatformData {

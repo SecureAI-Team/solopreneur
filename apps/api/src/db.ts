@@ -21,4 +21,4 @@ export const db = dbInstance;
 export const schema = useSqlite ? sqliteSchema : pgSchema;
 
 // Re-export individual tables for convenience
-export const { users, contents, platformConnections, publishRecords, analytics, aiConversations, automationRules, comments } = schema;
+export const { users, contents, platformConnections, publishRecords, analytics, aiConversations, automationRules, comments, contentLearning, systemConfig, planConfig, adminLogs, research, syncedAnalytics } = schema;

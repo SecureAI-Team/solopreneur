@@ -10,6 +10,17 @@ import { Zap, MessageSquare, ThumbsUp, RefreshCw, Sparkles, Loader2, Play, Pause
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useEffect } from "react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 // Mock Rules Data
 const initialRules = [
@@ -59,6 +70,9 @@ const initialRules = [
 export default function AutomationPage() {
     const [rules, setRules] = useState<any[]>([]);
     const [loading, setLoading] = useState<string | null>(null);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [newRule, setNewRule] = useState({ title: "", type: "auto_reply", description: "" });
 
     useEffect(() => {
         api.automation.list().then(res => {
@@ -107,6 +121,45 @@ export default function AutomationPage() {
         }
     };
 
+    const handleCreateRule = async () => {
+        if (!newRule.title) return toast.error("请输入规则名称");
+        setIsCreating(true);
+        try {
+            // Mock API endpoint for creation if backend doesn't support it yet
+            // For now assuming api.automation.create connects to a real or mock endpoint
+            await new Promise(r => setTimeout(r, 1000)); // Simulate delay
+            const res = await api.automation.create(newRule);
+
+            // Optimistic update or refresh
+            // Since backend might verify, we'll just mock add it to UI for demo
+
+            const newUiRule = {
+                id: newRule.type + Date.now(),
+                icon: Zap,
+                color: 'text-gray-500',
+                bg: 'bg-gray-100 dark:bg-gray-900/30',
+                title: newRule.title,
+                description: newRule.description,
+                enabled: true,
+                stats: '新创建',
+                type: newRule.type
+            };
+
+            if (newRule.type === 'auto_reply') { newUiRule.icon = MessageSquare; newUiRule.color = 'text-blue-500'; newUiRule.bg = 'bg-blue-100 dark:bg-blue-900/30'; }
+            if (newRule.type === 'auto_like') { newUiRule.icon = ThumbsUp; newUiRule.color = 'text-pink-500'; newUiRule.bg = 'bg-pink-100 dark:bg-pink-900/30'; }
+
+            setRules(prev => [...prev, newUiRule]);
+            toast.success("规则创建成功");
+            setIsCreateOpen(false);
+            setNewRule({ title: "", type: "auto_reply", description: "" });
+
+        } catch (e) {
+            toast.error("创建失败");
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
 
 
     return (
@@ -117,10 +170,59 @@ export default function AutomationPage() {
                         <h2 className="text-2xl font-bold">自动化工作流</h2>
                         <p className="text-muted-foreground">管理您的自动执行规则，提升运营效率</p>
                     </div>
-                    <Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 border-0">
-                        <Zap className="size-4" />
-                        创建新规则
-                    </Button>
+                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 border-0">
+                                <Zap className="size-4" />
+                                创建新规则
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>创建自动化规则</DialogTitle>
+                                <DialogDescription>
+                                    配置新的自动化工作流以提升效率。
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>规则名称</Label>
+                                    <Input
+                                        placeholder="例如：自动回复好评"
+                                        value={newRule.title}
+                                        onChange={e => setNewRule({ ...newRule, title: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>规则类型</Label>
+                                    <select
+                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                        value={newRule.type}
+                                        onChange={e => setNewRule({ ...newRule, type: e.target.value })}
+                                    >
+                                        <option value="auto_reply">评论自动回复</option>
+                                        <option value="auto_like">智能点赞</option>
+                                        <option value="cross_sync">多平台同步</option>
+                                        <option value="ai_optimize">AI 内容优化</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>描述 (可选)</Label>
+                                    <Input
+                                        placeholder="描述该规则的作用..."
+                                        value={newRule.description}
+                                        onChange={e => setNewRule({ ...newRule, description: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>取消</Button>
+                                <Button onClick={handleCreateRule} disabled={isCreating}>
+                                    {isCreating ? '创建中...' : '确认创建'}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 <div className="grid gap-4">

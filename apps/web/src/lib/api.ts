@@ -65,6 +65,22 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ code }),
         }),
+        updateProfile: (profile: {
+            niche?: string;
+            interests?: string[];
+            skills?: string[];
+            audience?: string;
+            style?: string;
+            contentDNA?: {
+                persona?: string;
+                visualStyle?: string;
+                voice?: string;
+                bio?: string;
+            };
+        }) => fetcher<any>('/auth/profile', {
+            method: 'POST',
+            body: JSON.stringify(profile),
+        }),
     },
     content: {
         list: (params?: { status?: string; type?: string }) => {
@@ -120,6 +136,30 @@ export const api = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+        generateImage: (prompt: string, style?: string) => fetcher<{ data: { url: string } }>('/ai/image/generate', {
+            method: 'POST',
+            body: JSON.stringify({ prompt, style }),
+        }),
+        polishText: (content: string, platform: string, instruction?: string) => fetcher<{ data: { content: string; changes: string[]; quality: number; agent: string } }>('/ai/text/polish', {
+            method: 'POST',
+            body: JSON.stringify({ content, platform, instruction }),
+        }),
+        generateLayout: (content: string, platform: string) => fetcher<{ data: { content: string; previewHtml?: string } }>('/ai/layout', {
+            method: 'POST',
+            body: JSON.stringify({ content, platform }),
+        }),
+        learnPatterns: (contents: Array<{
+            id: string;
+            title: string;
+            body: string;
+            platform?: string;
+            views?: number;
+            likes?: number;
+            comments?: number;
+        }>) => fetcher<{ data: { learnedPatterns: any; contentCount: number; totalEngagement: number } }>('/ai/learn', {
+            method: 'POST',
+            body: JSON.stringify({ contents }),
+        }),
     },
     analytics: {
         getOverview: () => fetcher<any>('/analytics/dashboard'),
@@ -135,23 +175,13 @@ export const api = {
         }),
     },
     platforms: {
-        getAuthUrl: (platform: string) => fetcher<{ url: string }>(`/platforms/${platform}/auth-url`),
-        connectWechat: (code: string) => fetcher<any>('/platforms/wechat/callback', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        }),
-        connectDouyin: (code: string) => fetcher<any>('/platforms/douyin/callback', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        }),
-        connectXiaohongshu: (code: string) => fetcher<any>('/platforms/xiaohongshu/callback', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        }),
-        connectBilibili: (code: string) => fetcher<any>('/platforms/bilibili/callback', {
-            method: 'POST',
-            body: JSON.stringify({ code }),
-        }),
+        // Platform OAuth methods removed in Pure Tool Mode
+        getCredentials: () => fetcher<Array<{
+            platform: string;
+            appId: string;
+            appSecret: string | null;
+            isConfigured: boolean;
+        }>>('/platforms/credentials'),
     },
     automation: {
         list: () => fetcher<any>('/automation'),
@@ -159,5 +189,44 @@ export const api = {
             method: 'POST',
             body: JSON.stringify({ type, isEnabled }),
         }),
-    }
+        create: (data: { title: string; type: string; description: string }) => fetcher<any>('/automation', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+    },
+    // Admin API
+    admin: {
+        dashboard: () => fetcher<any>('/admin/dashboard'),
+        users: (params?: { page?: number; limit?: number; search?: string }) =>
+            fetcher<any>(`/admin/users?page=${params?.page || 1}&limit=${params?.limit || 20}`),
+        updateUser: (userId: string, updates: any) => fetcher<any>(`/admin/users/${userId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(updates),
+        }),
+        getConfig: () => fetcher<any>('/admin/config'),
+        saveConfig: (config: { key: string; value: string; isSecret?: boolean; category?: string; description?: string }) =>
+            fetcher<any>('/admin/config', {
+                method: 'POST',
+                body: JSON.stringify(config),
+            }),
+        saveConfigBatch: (configs: Array<{ key: string; value: string; isSecret?: boolean; category?: string; description?: string }>) =>
+            fetcher<any>('/admin/config/batch', {
+                method: 'POST',
+                body: JSON.stringify({ configs }),
+            }),
+        getPlans: () => fetcher<any>('/admin/plans'),
+        savePlan: (plan: any) => fetcher<any>('/admin/plans', {
+            method: 'POST',
+            body: JSON.stringify(plan),
+        }),
+        getLogs: (params?: { page?: number; limit?: number }) =>
+            fetcher<any>(`/admin/logs?page=${params?.page || 1}&limit=${params?.limit || 50}`),
+    },
+    research: {
+        sync: (data: { keyword: string; platform: string; rawData: any[] }) => fetcher<any>('/research/sync', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+        getHistory: () => fetcher<any>('/research/history'),
+    },
 };

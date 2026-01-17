@@ -13,7 +13,8 @@ import {
   Zap,
   FolderOpen,
   LogOut,
-  User
+  User,
+  Search
 } from "lucide-react"
 
 import {
@@ -60,6 +61,11 @@ const mainNavItems = [
     title: "发布中心",
     icon: Send,
     href: "/publish",
+  },
+  {
+    title: "市场调研",
+    icon: Search,
+    href: "/research",
   },
   {
     title: "数据分析",

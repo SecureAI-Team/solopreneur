@@ -6,6 +6,8 @@ import {
     generateInsights,
     generateNicheAnalysis,
     generateContentDNA,
+    polishContent,
+    generateLayout,
     type ChatMessage
 } from '@solomedia/ai';
 import { db, aiConversations } from '../db';
@@ -270,6 +272,68 @@ aiRoutes.post('/content-dna', async (c) => {
         return c.json({
             success: false,
             error: error.message || '生成失败'
+        }, 500);
+    }
+});
+
+// AI内容润色
+aiRoutes.post('/text/polish', async (c) => {
+    try {
+        const body = await c.req.json();
+        const { content, platform, instruction } = body;
+
+        if (!content) {
+            return c.json({ success: false, error: '请提供内容' }, 400);
+        }
+
+        const result = await polishContent({
+            content,
+            platform: platform || 'douyin',
+            instruction
+        });
+
+        return c.json({
+            success: true,
+            data: {
+                content: result.content,
+                changes: result.changes,
+                quality: result.quality,
+                agent: 'AI Editor'
+            }
+        });
+    } catch (error: any) {
+        console.error('AI润色失败:', error);
+        return c.json({
+            success: false,
+            error: error.message || '润色失败'
+        }, 500);
+    }
+});
+
+// AI排版优化
+aiRoutes.post('/layout', async (c) => {
+    try {
+        const body = await c.req.json();
+        const { content, platform } = body;
+
+        if (!content) {
+            return c.json({ success: false, error: '请提供内容' }, 400);
+        }
+
+        const result = await generateLayout({
+            content,
+            platform: platform || 'xiaohongshu'
+        });
+
+        return c.json({
+            success: true,
+            data: result
+        });
+    } catch (error: any) {
+        console.error('AI排版失败:', error);
+        return c.json({
+            success: false,
+            error: error.message || '排版失败'
         }, 500);
     }
 });

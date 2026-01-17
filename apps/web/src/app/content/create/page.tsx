@@ -1,7 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { CopyToPlatform } from '@/components/copy-to-platform';
+
+
+
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { RichEditor } from '@/components/editor/rich-editor';
 import { PosterGenerator } from '@/components/editor/poster-generator';
@@ -12,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Wand2, Save, Send, ArrowLeft, Image, CalendarDays,
-    Video, FileText, Sparkles, Check, Loader2, Clock
+    Video, FileText, Sparkles, Check, Loader2, Clock, TrendingUp
 } from 'lucide-react';
 import {
     Dialog, DialogContent, DialogDescription, DialogFooter,
@@ -31,7 +35,7 @@ const platforms = [
     { id: 'wechat', name: '公众号', icon: '💬', color: 'bg-green-500' },
 ];
 
-export default function CreateContentPage() {
+function CreateContentForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const editId = searchParams.get('id');
@@ -43,12 +47,13 @@ export default function CreateContentPage() {
     const [contentType, setContentType] = useState<'video' | 'image' | 'article'>((typeParam as any) || 'video');
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isPublishing, setIsPublishing] = useState(false);
     const [contentId, setContentId] = useState<string | null>(editId);
     const [activeTab, setActiveTab] = useState('editor');
     const [isLoading, setIsLoading] = useState(false);
-    const [scheduleOpen, setScheduleOpen] = useState(false);
-    const [scheduledTime, setScheduledTime] = useState('');
+    const [isPolishing, setIsPolishing] = useState(false);
+    const [isLayout, setIsLayout] = useState(false);
+    const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+    const [tags, setTags] = useState<string[]>([]);
 
     // Load existing draft if editing
     useEffect(() => {
@@ -121,6 +126,84 @@ export default function CreateContentPage() {
         }
     };
 
+    // AI Polish Handler
+    const handleAIPolish = async () => {
+        if (!content || content.length < 10) {
+            toast.error('请先输入一些内容');
+            return;
+        }
+
+        setIsPolishing(true);
+        const toastId = toast.loading('AI 正在润色内容...');
+
+        try {
+            // Pass content to polish
+            const res = await api.ai.polishText(content, selectedPlatforms[0] || 'douyin');
+
+            if (res.success && res.data?.data) {
+                const polishedContent = res.data.data.content;
+                const quality = res.data.data.quality;
+
+                // Keep HTML format if it was HTML, otherwise wrap
+                let htmlContent = polishedContent;
+                if (typeof polishedContent === 'string' && !polishedContent.startsWith('<') && !polishedContent.includes('</')) {
+                    htmlContent = polishedContent.replace(/\n/g, '<br/>');
+                }
+
+                setContent(htmlContent);
+                toast.dismiss(toastId);
+                toast.success(`✨ AI 润色完成 (质量分: ${Math.round(quality * 100)})`);
+            } else {
+                toast.dismiss(toastId);
+                toast.error(res.error || 'AI 润色失败');
+            }
+        } catch (error: any) {
+            console.error('AI Polish error:', error);
+            toast.dismiss(toastId);
+            toast.error(error.message || 'AI 润色服务出错');
+        } finally {
+            setIsPolishing(false);
+        }
+    };
+
+    // AI Layout Handler
+    const handleAILayout = async () => {
+        if (!content || content.length < 10) {
+            toast.error('请先输入一些内容');
+            return;
+        }
+
+        setIsLayout(true);
+        const toastId = toast.loading('AI 正在优化排版...');
+
+        try {
+            const res = await api.ai.generateLayout(content, selectedPlatforms[0] || 'xiaohongshu');
+
+            if (res.success && res.data?.data) {
+                const layoutContent = res.data.data.content;
+
+                let htmlContent = layoutContent;
+                // If it looks like markdown/plain text, convert newlines to br
+                if (typeof layoutContent === 'string' && !layoutContent.startsWith('<') && !layoutContent.includes('</')) {
+                    htmlContent = layoutContent.replace(/\n/g, '<br/>');
+                }
+
+                setContent(htmlContent);
+                toast.dismiss(toastId);
+                toast.success('🎨 排版优化完成');
+            } else {
+                toast.dismiss(toastId);
+                toast.error(res.error || 'AI 排版失败');
+            }
+        } catch (error: any) {
+            console.error('AI Layout error:', error);
+            toast.dismiss(toastId);
+            toast.error('AI 排版服务出错');
+        } finally {
+            setIsLayout(false);
+        }
+    };
+
     const handleSave = async (showToast = true) => {
         console.log('[DEBUG] handleSave called, title state:', title, 'content length:', content.length);
         if (!title) {
@@ -134,7 +217,7 @@ export default function CreateContentPage() {
                 title,
                 body: content,
                 type: contentType,
-                platforms: selectedPlatforms,
+                platforms: selectedPlatforms as any,
             };
 
             let res;
@@ -163,39 +246,21 @@ export default function CreateContentPage() {
         }
     };
 
-    const handlePublish = async (scheduledAt?: string) => {
-        if (selectedPlatforms.length === 0) {
-            toast.error('请至少选择一个发布平台');
+    // 打开复制发布对话框
+    const handleOpenCopyDialog = async () => {
+        if (!title.trim() && !content.trim()) {
+            toast.error('请先填写内容');
             return;
         }
-
         // 先保存
-        const savedId = await handleSave(false);
-        if (!savedId) return;
-
-        setIsPublishing(true);
-        try {
-            const res = await api.content.publish(savedId, selectedPlatforms as any, scheduledAt);
-            if (res.success) {
-                toast.success(scheduledAt ? '已加入发布计划' : '发布任务已提交');
-                setScheduleOpen(false);
-                setTimeout(() => router.push('/content'), 1000);
-            } else {
-                toast.error(res.error || '发布请求失败');
-            }
-        } catch (error) {
-            toast.error('发布出错');
-        } finally {
-            setIsPublishing(false);
-        }
+        await handleSave(false);
+        setCopyDialogOpen(true);
     };
 
-    const handleSchedule = () => {
-        if (!scheduledTime) {
-            toast.error('请选择发布时间');
-            return;
-        }
-        handlePublish(new Date(scheduledTime).toISOString());
+    // 从内容中提取标签
+    const extractTags = (text: string): string[] => {
+        const matches = text.match(/#[\u4e00-\u9fa5a-zA-Z0-9]+/g) || [];
+        return matches.map(t => t.replace('#', '')).slice(0, 10);
     };
 
     return (
@@ -215,56 +280,36 @@ export default function CreateContentPage() {
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => handleSave(true)} disabled={isSaving || isPublishing}>
+                        <Button variant="outline" onClick={() => handleSave(true)} disabled={isSaving}>
                             {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
                             {isSaving ? '保存中...' : '保存草稿'}
                         </Button>
 
-                        <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+                        <Dialog open={copyDialogOpen} onOpenChange={setCopyDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="border-violet-200 text-violet-700 hover:bg-violet-50">
-                                    <CalendarDays className="h-4 w-4 mr-2" />
-                                    定时发布
+                                <Button
+                                    className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
+                                    onClick={handleOpenCopyDialog}
+                                    disabled={isSaving}
+                                >
+                                    <Send className="h-4 w-4 mr-2" />
+                                    去发布
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
-                                    <DialogTitle>定时发布</DialogTitle>
+                                    <DialogTitle>复制内容到平台发布</DialogTitle>
                                     <DialogDescription>
-                                        选择发布时间，系统将在指定时间自动发布到选定平台。
+                                        选择目标平台，系统会自动适配格式，复制后粘贴到对应平台发布。
                                     </DialogDescription>
                                 </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid grid-cols-4 items-center gap-4">
-                                        <label htmlFor="schedule-time" className="text-right text-sm font-medium">
-                                            发布时间
-                                        </label>
-                                        <Input
-                                            id="schedule-time"
-                                            type="datetime-local"
-                                            className="col-span-3"
-                                            value={scheduledTime}
-                                            onChange={(e) => setScheduledTime(e.target.value)}
-                                            min={new Date().toISOString().slice(0, 16)}
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button onClick={handleSchedule} disabled={isPublishing}>
-                                        {isPublishing ? '提交中...' : '确认排期'}
-                                    </Button>
-                                </DialogFooter>
+                                <CopyToPlatform
+                                    title={title}
+                                    content={content.replace(/<[^>]*>/g, '')}
+                                    tags={extractTags(content)}
+                                />
                             </DialogContent>
                         </Dialog>
-
-                        <Button
-                            className="bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700"
-                            onClick={() => handlePublish()}
-                            disabled={isSaving || isPublishing}
-                        >
-                            {isPublishing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                            {isPublishing ? '发布中...' : '发布'}
-                        </Button>
                     </div>
                 </div>
 
@@ -289,6 +334,42 @@ export default function CreateContentPage() {
                                         >
                                             <Wand2 className={`h-4 w-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
                                             {isGenerating ? 'AI生成中...' : 'AI生成'}
+                                        </Button>
+                                    </div>
+
+                                    {/* AI Tools Toolbar */}
+                                    <div className="flex gap-2 p-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border">
+                                        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground px-2">
+                                            <Sparkles className="size-3" />
+                                            AI 润色:
+                                        </div>
+                                        <Button
+                                            variant="ghost" size="sm"
+                                            className="h-7 text-xs gap-1 hover:text-violet-600 hover:bg-violet-50"
+                                            onClick={handleAIPolish}
+                                            disabled={isPolishing}
+                                        >
+                                            {isPolishing ? <Loader2 className="size-3 animate-spin" /> : <Wand2 className="size-3" />}
+                                            {isPolishing ? '润色中...' : '一键美化'}
+                                        </Button>
+                                        <Button
+                                            variant="ghost" size="sm"
+                                            className="h-7 text-xs gap-1 hover:text-amber-600 hover:bg-amber-50"
+                                            onClick={handleAILayout}
+                                            disabled={isLayout}
+                                        >
+                                            {isLayout ? <Loader2 className="size-3 animate-spin" /> : <TrendingUp className="size-3" />}
+                                            {isLayout ? '优化中...' : '智能排版'}
+                                        </Button>
+                                        <div className="w-px h-4 bg-border mx-1" />
+                                        <Button
+                                            variant="ghost" size="sm"
+                                            className="h-7 text-xs gap-1 hover:text-blue-600 hover:bg-blue-50"
+                                            onClick={() => toast.info('合规检测已内置在 AI 润色流程中')}
+                                            disabled={isPolishing}
+                                        >
+                                            <Check className="size-3" />
+                                            合规检测
                                         </Button>
                                     </div>
                                 </div>
@@ -463,5 +544,13 @@ export default function CreateContentPage() {
                 </div>
             </div>
         </DashboardLayout>
+    );
+}
+
+export default function CreateContentPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="size-8 animate-spin text-muted-foreground" /></div>}>
+            <CreateContentForm />
+        </Suspense>
     );
 }

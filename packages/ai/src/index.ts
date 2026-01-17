@@ -7,12 +7,13 @@
 import OpenAI from 'openai';
 
 // AI质量配置
+export * from './agent';
 export const AI_CONFIG = {
     // 模型优先级：按质量从高到低
     models: {
-        high: 'qwen-max',      // 最高质量，用于重要内容生成
-        medium: 'qwen-plus',   // 中等质量，平衡成本和效果
-        fast: 'qwen-turbo',    // 快速响应，用于简单任务
+        high: 'qwen-max',      // 通义千问-Max：千亿级参数，推理能力最强
+        medium: 'qwen-plus',   // 通义千问-Plus：均衡模型
+        fast: 'qwen-turbo',    // 通义千问-Turbo：速度快，成本低
     },
     // 质量保障参数
     quality: {
@@ -235,6 +236,100 @@ ${params.userHistory ? `历史方向: ${params.userHistory}` : ''}`;
 }
 
 /**
+ * AI内容润色 - 多维度优化
+ */
+export async function polishContent(params: {
+    content: string;
+    platform: string;
+    instruction?: string; // e.g. "更幽默一点", "精简文字"
+}): Promise<{
+    content: string;
+    changes: string[];
+    quality: number;
+}> {
+    const systemPrompt = `你是顶级内容编辑，擅长优化自媒体文案。
+请根据平台特性和用户指令，对文案进行润色。
+
+平台风格参考：
+- 抖音: 口语化、节奏快、情绪饱满
+- 小红书: 种草感、情绪价值、生活化
+- B站: 有梗、专业、真诚
+- 公众号: 逻辑清晰、有深度、金句频出
+
+返回JSON格式：
+{
+    "content": "润色后的完整内容",
+    "changes": ["优化了开头吸引力", "增加了互动引导"],
+    "quality": 0.95
+}`;
+
+    const userPrompt = `原文：
+${params.content}
+
+平台：${params.platform}
+${params.instruction ? `优化指令：${params.instruction}` : ''}`;
+
+    const result = await chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+    ], { quality: 'high', temperature: 0.7 });
+
+    try {
+        const jsonMatch = result.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+    } catch { }
+
+    return { content: params.content, changes: [], quality: 0 };
+}
+
+/**
+ * AI排版优化 - 针对平台特性的视觉结构优化
+ */
+export async function generateLayout(params: {
+    content: string;
+    platform: string;
+}): Promise<{
+    content: string;
+    previewHtml?: string; // 可选的HTML预览（用于公众号）
+}> {
+    let systemPrompt = '';
+
+    if (params.platform === 'xiaohongshu') {
+        systemPrompt = `你是小红书排版专家。请对文本进行"小红书味"的排版优化。
+原则：
+1. 增加大量Emoji，但不要杂乱
+2. 关键信息加粗或用符号标注 (如 📌, 🌟)
+3. 段落短小，增加空行
+4. 结尾加上相关话题标签
+5. 保持原文意思不变，只改排版和语气词
+
+直接返回排版后的文本，不需要JSON格式。`;
+    } else if (params.platform === 'wechat') {
+        systemPrompt = `你是公众号排版专家。请将文本转换为适合手机阅读的Markdown结构。
+原则：
+1. 增加小标题 (##)
+2. 重点句子加粗 (**text**)
+3. 适当使用引用 (> quote) 强调金句
+4. 段落之间增加空行
+5. 保持专业和整洁
+
+直接返回排版后的文本。`;
+    } else {
+        // 通用排版
+        systemPrompt = `请美化这段文本的排版，使其更易读。增加分段和适当的Emoji。直接返回文本。`;
+    }
+
+    const result = await chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: params.content },
+    ], { quality: 'medium', temperature: 0.5 });
+
+    return { content: result };
+}
+
+/**
  * AI生成内容大纲
  */
 export async function generateOutline(params: {
@@ -451,3 +546,105 @@ export async function generateContentDNA(params: {
     };
 }
 
+
+/**
+ * AI图像生成 - 通义万相 (Tongyi Wanxiang)
+ * 文档: https://help.aliyun.com/document_detail/2712529.html
+ */
+export async function generateImage(params: {
+    prompt: string;
+    style?: string; // e.g., "<3d cartoon>" or "<cyberpunk>"
+    size?: '1024*1024' | '720*1280' | '1280*720';
+}): Promise<{ url: string } | null> {
+    const apiKey = process.env.DASHSCOPE_API_KEY;
+    if (!apiKey) throw new Error('DASHSCOPE_API_KEY 未设置');
+
+    const url = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text2image/image-synthesis';
+
+    // 构造Prompt，通义万相支持风格修饰词
+    const fullPrompt = params.style
+        ? `${params.style}, ${params.prompt}, high quality, detailed`
+        : `${params.prompt}, high quality, detailed`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'X-DashScope-Async': 'enable', // 异步提交
+            },
+            body: JSON.stringify({
+                model: 'wanx-v1',
+                input: {
+                    prompt: fullPrompt
+                },
+                parameters: {
+                    style: params.style || '<auto>',
+                    size: params.size || '1024*1024',
+                    n: 1
+                }
+            })
+        });
+
+        const data = await response.json();
+
+        // 简单处理：如果是异步任务，通常需要轮询。这里简化为直接返回task_id，
+        // 实际生产环境需要实现 Polling 机制。
+        // 但 Tongyi Wanxiang V1 也支持同步调用（不加Async头）？
+        // 修正：万相 V1 推荐异步，但也支持同步等待（如果不加header）。
+        // 尝试同步调用（不加 X-DashScope-Async）：
+        // 注意：Fetch API 在 Node 环境需要 polyfill (Next.js 16 自带，Shared package可能需要 node-fetch)
+        // 假设运行环境支持 fetch (Node 18+)
+
+        if (data.output && data.output.task_status === 'SUCCEEDED') {
+            // 同步返回的情况
+            return { url: data.output.results[0].url };
+        } else if (data.output && data.output.task_id) {
+            // 异步返回的情况，需要轮询
+            return await pollTaskResult(data.output.task_id, apiKey);
+        } else if (response.status !== 200) {
+            console.error('Wanxiang Error:', data);
+        }
+
+    } catch (e) {
+        console.error('generateImage failed:', e);
+    }
+    return null;
+}
+
+async function pollTaskResult(taskId: string, apiKey: string): Promise<{ url: string } | null> {
+    const url = `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`;
+
+    // 轮询 30 秒
+    for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 3000)); // Wait 3s
+        try {
+            const res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${apiKey}` }
+            });
+            const data = await res.json();
+            if (data.output && data.output.task_status === 'SUCCEEDED') {
+                return { url: data.output.results[0].url };
+            } else if (data.output && data.output.task_status === 'FAILED') {
+                console.error('Task failed:', data);
+                return null;
+            }
+        } catch (e) { console.error('Polling error:', e); }
+    }
+    return null;
+}
+
+/**
+ * AI语音生成 - CosyVoice (通过阿里云语音合成API)
+ * 简化版: 使用 Sambert 或 CosyVoice 接口
+ */
+export async function generateSpeech(params: {
+    text: string;
+    voice?: string; // e.g., "zhiyan_emo"
+}): Promise<ArrayBuffer | null> {
+    // 这是一个 Mock 实现的占位符，因为 Speech API 通常需要 WebSocket 或复杂的 REST 流程
+    // 实际应调用: https://dashscope.aliyuncs.com/api/v1/services/audio/tts/generation
+    console.log('Generating speech for:', params.text);
+    return null;
+}

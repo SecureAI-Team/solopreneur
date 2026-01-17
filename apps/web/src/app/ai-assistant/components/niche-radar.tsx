@@ -13,6 +13,8 @@ export function NicheRadar() {
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [results, setResults] = useState<any[]>([])
+    const [generatingImg, setGeneratingImg] = useState<string | null>(null)
+    const [moodBoardUrls, setMoodBoardUrls] = useState<Record<string, string>>({})
 
     const [interests, setInterests] = useState<string[]>([])
     const [skills, setSkills] = useState<string[]>([])
@@ -50,6 +52,23 @@ export function NicheRadar() {
         }
     }
 
+    const handleGenerateMoodBoard = async (niche: string) => {
+        setGeneratingImg(niche)
+        try {
+            const res = await api.ai.generateImage(
+                `A mood board for a social media creator in the "${niche}" niche. High quality, inspiring, aesthetic.`,
+                "<auto>"
+            )
+            if (res.success && res.data?.data?.url) {
+                setMoodBoardUrls(prev => ({ ...prev, [niche]: res.data!.data.url }))
+            }
+        } catch (e) {
+            console.error(e)
+        } finally {
+            setGeneratingImg(null)
+        }
+    }
+
     return (
         <Card className="h-full border-0 shadow-none">
             <CardHeader>
@@ -72,8 +91,8 @@ export function NicheRadar() {
                                         key={item}
                                         onClick={() => toggleInterest(item)}
                                         className={`px-4 py-2 rounded-full cursor-pointer text-sm transition-all border ${interests.includes(item)
-                                                ? "bg-primary text-primary-foreground border-primary"
-                                                : "bg-background hover:bg-muted"
+                                            ? "bg-primary text-primary-foreground border-primary"
+                                            : "bg-background hover:bg-muted"
                                             }`}
                                     >
                                         {item}
@@ -98,8 +117,8 @@ export function NicheRadar() {
                                         key={item}
                                         onClick={() => toggleSkill(item)}
                                         className={`px-4 py-2 rounded-full cursor-pointer text-sm transition-all border ${skills.includes(item)
-                                                ? "bg-secondary text-secondary-foreground border-secondary"
-                                                : "bg-background hover:bg-muted"
+                                            ? "bg-secondary text-secondary-foreground border-secondary"
+                                            : "bg-background hover:bg-muted"
                                             }`}
                                     >
                                         {item}
@@ -144,6 +163,28 @@ export function NicheRadar() {
                                     <Button variant="outline" size="sm" className="w-full">
                                         选择此赛道
                                     </Button>
+                                    <div className="mt-3 pt-3 border-t">
+                                        {moodBoardUrls[item.niche] ? (
+                                            <div className="space-y-2">
+                                                <img src={moodBoardUrls[item.niche]} alt="Mood Board" className="w-full h-32 object-cover rounded-md" />
+                                                <p className="text-xs text-muted-foreground text-center">AI生成的赛道情绪板</p>
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full text-xs text-violet-500 hover:text-violet-600 hover:bg-violet-50"
+                                                onClick={() => handleGenerateMoodBoard(item.niche)}
+                                                disabled={!!generatingImg}
+                                            >
+                                                {generatingImg === item.niche ? (
+                                                    <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> 生成中...</>
+                                                ) : (
+                                                    <><Target className="w-3 h-3 mr-1" /> 生成情绪板 (Mood Board)</>
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>

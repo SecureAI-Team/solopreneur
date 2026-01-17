@@ -182,10 +182,56 @@ authRoutes.get('/me', async (c) => {
                 email: user.email,
                 nickname: user.nickname,
                 avatar: user.avatar,
-                plan: user.plan
+                plan: user.plan,
+                profile: user.profile // 返回用户个性化配置
             }
         });
     } catch {
         return c.json({ success: false, error: 'Token无效' }, 401);
+    }
+});
+
+// 更新用户配置 (Onboarding 数据保存)
+authRoutes.post('/profile', async (c) => {
+    const authHeader = c.req.header('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+        return c.json({ success: false, error: '未授权' }, 401);
+    }
+
+    try {
+        const token = authHeader.slice(7);
+        const payload = await verify(token, JWT_SECRET, 'HS256');
+        const userId = payload.userId as string;
+
+        const body = await c.req.json();
+        const { niche, interests, skills, audience, style, contentDNA } = body;
+
+        // 更新用户配置
+        const [updatedUser] = await db.update(users)
+            .set({
+                profile: {
+                    niche,
+                    interests,
+                    skills,
+                    audience,
+                    style,
+                    contentDNA,
+                    onboardingCompleted: true,
+                },
+                updatedAt: new Date(),
+            })
+            .where(eq(users.id, userId))
+            .returning();
+
+        return c.json({
+            success: true,
+            data: {
+                profile: updatedUser.profile
+            },
+            message: '配置保存成功'
+        });
+    } catch (error: any) {
+        console.error('Update profile error:', error);
+        return c.json({ success: false, error: error.message || '保存失败' }, 400);
     }
 });

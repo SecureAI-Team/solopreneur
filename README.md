@@ -33,46 +33,53 @@
 
 ---
 
-## 🗺️ 用户旅程 (User Journey)
+## 🗺️ 用户旅程 (User Journey) - 自动化模式 (New)
 
-SoloMedia 为创作者打造了全链路的闭环工作流：
+SoloMedia 采用 **RPA (Robotic Process Automation)** 技术，通过浏览器插件或客户端实现"非侵入式"的自动发布与数据采集。
 
 ```mermaid
 graph TD
-    A[🌱 新手起步] -->|粉丝画像/赛道分析| B(🎯 灵感与规划 Plan)
-    B -->|AI 选题/脚本| C(✍️ 创作与管理 Create)
-    C -->|素材库/海报生成的| C
-    C -->|多平台一键分发| D(🚀 发布 Publish)
-    D -->|各平台粉丝互动| E(🤝 互动 Engage)
-    E -->|自动点赞/回复| E
-    E -->|数据回流| F(📈 复盘 Analyze)
-    F -->|优化选题方向| B
+    User(创作者) -->|1.新手起步/关键词| App(SoloMedia Web)
+    App -->|2.发起调研指令| Extension(浏览器插件)
+    
+    subgraph Browser Context [浏览器环境]
+        Extension -->|3.自动搜索&采集| Platform(抖音/小红书)
+        Platform -->|4.返回市场数据| Extension
+        Extension -->|5.回传数据| App
+    end
+    
+    App -->|6.生成起步指南| User
+    User -->|7.创作内容| App
+    App -->|8.AI 润色/排版| App
+    App -->|9.一键同步| Extension
+    
+    subgraph Publishing [发布流程]
+        Extension -->|10.自动填充| Platform
+        Platform -->|11.确认发布| Done(已发布)
+    end
 ```
 
 ### 环节详解
 
-#### 1. 🎯 灵感与规划 (Plan)
-- **新手痛点**：不知道做什么内容。
-- **解决方案**：**粉丝画像 (`/audience`)** 帮你定位受众，**AI 助手 (`/ai-assistant`)** 帮你头脑风暴，从 0 到 1 确定赛道。
+#### 1. 🎯 灵感与规划 (Plan) - **Agentic Research**
+- **智能调研**：输入关键词（如"数码测评"），**浏览器插件**将模拟用户行为，自动在抖音/小红书搜索并抓取前 50 条爆款数据。
+- **AI 分析**：SoloMedia 对抓取数据进行深度分析，生成《新手起步指南》，告诉你该拍什么、怎么拍。
+- **通过数据决策**：告别盲目模仿，基于真实市场数据确定赛道与选题。
 
-### 2. ✍️ 创作与管理 (Create)
-- **素材库 (`/media`)**：集中管理视频、图片素材，支持拖拽上传和预览。
-- **内容工作台 (`/content`)**：
-    - 使用 **Rich Editor** 撰写图文/文章。
-    - 使用 **Poster Generator** 一键生成精美封面。
-    - 关联素材，准备发布内容。
+#### 2. ✍️ 创作与管理 (Create)
+- **一键填充**：在 Web 端点击发布，插件自动接管浏览器，打开对应平台创作中心，填入标题、内容、话题标签并上传封面。
+- **数据回流**：当您浏览平台后台时，插件自动采集播放量、点赞数等核心指标，生成跨平台报表。
 
-### 3. 🚀 发布与分发 (Publish)
-- **发布中心 (`/publish`)**：一键分发到抖音、小红书、B站、公众号。
-- **定时发布**：设置好时间，系统自动执行，解放你的周末。
+### 核心特性
 
-### 4. 🤝 互动与增长 (Engage)
-- **统一收件箱 (`/inbox`)**：聚合所有平台的评论和私信，不错过任何互动机会。
-- **自动化规则 (`/automation`)**：设置自动点赞、自动回复关键词，7x24小时维护粉丝关系。
+#### 1. 🤖 浏览器自动驾驶 (Auto-Pilot)
+- **拒绝 API 限制**：无需申请官方 API 权限，直接模拟用户操作。
+- **一键填充**：在 Web 端点击发布，插件自动接管浏览器，打开对应平台创作中心，填入标题、内容、话题标签并上传封面。
+- **数据回流**：当您浏览平台后台时，插件自动采集播放量、点赞数等核心指标，生成跨平台报表。
 
-### 5. 📈 复盘与优化 (Analyze)
-- **总览看板 (`/dashboard`)**：每天看一眼核心指标（粉丝数、阅读量、互动率）。
-- **趋势分析 (`/analytics`)**：发现哪些内容火了，为什么火，指导下一次创作。
+#### 2. 🛡️ 安全第一
+- **本地 Cookie**：所有登录凭证仅存储在您的浏览器本地，不上传服务器。
+- **防关联**：使用即用即走的插件模式，完全模拟真人操作频率，极大降低封号风险。
 
 ---
 
@@ -80,11 +87,11 @@ graph TD
 
 | 层级 | 技术 |
 |------|------|
-| **前端** | Next.js 16, React 19, TailwindCSS, Shadcn/UI, TipTap |
-| **后端** | Hono, Node.js 20, TypeScript, JWT Auth |
-| **数据库** | PostgreSQL + Drizzle ORM + Redis (BullMQ) |
+| **前端** | Next.js 16, React 19, TailwindCSS, Shadcn/UI |
+| **插件** | Chrome Extension (Manifest V3), React, Vite |
+| **后端** | Hono, Node.js 20, TypeScript |
 | **AI服务** | 阿里云通义千问 (Qwen-Max/Plus) |
-| **部署** | Docker Compose, Aliyun ECS |
+| **数据库** | PostgreSQL + Drizzle ORM + SQLite (Local) |
 
 ---
 
@@ -93,45 +100,46 @@ graph TD
 ```
 solopreneur/
 ├── apps/
-│   ├── web/              # Next.js Web应用 (Client & Auth UI)
-│   ├── api/              # Hono API服务 (JWT Secured)
-│   └── miniprogram/      # 微信小程序
+│   ├── web/              # Next.js 创作工作台
+│   ├── api/              # 后端服务
+│   ├── extension/        # [NEW] 浏览器自动化插件
+│   └── desktop/          # [Planned] Electron 客户端
 ├── packages/
-│   ├── ai/               # AI服务 (OpenAI SDK + Qwen)
-│   ├── database/         # Drizzle ORM Schema
-│   └── shared/           # 共享类型 (Zod Schemas)
-└── deploy/               # Docker配置
+│   ├── ai/               # AI Agent
+│   └── shared/           # 通用类型
+└── deploy/               # 部署配置
 ```
 
 ---
 
 ## 🚀 快速开始
 
+### 1. 启动 Web 服务
 ```bash
-# 安装pnpm
-npm install -g pnpm
-
-# 安装依赖
 pnpm install
-
-# 启动开发
 pnpm dev
-
-# 访问
-# Web: http://localhost:3000
 ```
+
+### 2. 加载浏览器插件
+1. `cd apps/extension && npm run build`
+2. Chrome 开启开发者模式 -> 加载 `dist` 文件夹
+3. Pin 住插件图标，开启自动化之旅！
 
 ---
 
 ## 🛣️ 产品蓝图
 
-- [x] MVP核心UI
-- [x] AI服务对接 (Qwen)
-- [x] 编辑器组件 (TipTap)
-- [x] 数据库连接 (PG + Redis)
-- [x] 用户认证 (JWT + WeChat)
-- [ ] 生产环境部署 (Docker Ready)
-- [ ] 抖音/小红书平台接入
+- [x] 核心创作功能 (编辑器/AI)
+- [x] **自动化可行性验证**
+- [ ] **Phase 1: 浏览器插件 (v0.5)**
+    - [ ] 抖音/小红书 自动填充
+    - [ ] 播放量数据抓取
+- [ ] **Phase 2: 桌面客户端 (v1.0)**
+    - [ ] 封装 Electron
+    - [ ] 后台定时任务队列
+- [ ] **Phase 3: 矩阵管理**
+    - [ ] 多账号切换
+    - [ ] 团队协作
 
 ---
 
